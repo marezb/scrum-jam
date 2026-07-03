@@ -149,6 +149,75 @@ describe('Scrum Poker E2E & Unit Tests', function() {
         const avgScore = updatedDoc.getElementById('average-score').innerText;
         expect(['8', '13']).to.include(avgScore);
     });
+
+    it('5. RenderPlayers - przypisuje kolor pastelowy odpowiednim kartom', async () => {
+        localStorage.setItem('sp_offlineMode', 'true');
+        const win = await loadApp('index.html?room=COLOR_ROOM');
+        const exports = win.__TEST_EXPORTS__;
+        
+        exports.setPlayersData({
+            'p1': { name: 'Alice', vote: '8', role: 'player' },
+            'p2': { name: 'Bob', vote: '89', role: 'player' },
+            'p3': { name: 'Charlie', vote: '?', role: 'player' }
+        });
+        exports.setIsRevealed(true);
+        exports.renderPlayers(false);
+        
+        const cards = win.document.querySelectorAll('.player-card');
+        expect(cards.length).to.equal(3);
+        
+        // 8 is green (#caffbf), 89 is blue (#bde0fe), ? is default (no inline style)
+        expect(cards[0].style.backgroundColor).to.include('rgb(202, 255, 191)'); // #caffbf
+        expect(cards[1].style.backgroundColor).to.include('rgb(189, 224, 254)'); // #bde0fe
+        expect(cards[2].style.backgroundColor).to.equal('');
+    });
+
+    it('6. Unanimous vote triggers confetti', async () => {
+        localStorage.setItem('sp_offlineMode', 'true');
+        const win = await loadApp('index.html?room=CONFETTI_ROOM');
+        const exports = win.__TEST_EXPORTS__;
+        
+        let confettiCalled = 0;
+        win.confetti = () => { confettiCalled++; };
+        
+        exports.setPlayersData({
+            'p1': { name: 'Alice', vote: '21', role: 'player' },
+            'p2': { name: 'Bob', vote: '21', role: 'player' }
+        });
+        
+        exports.calculateResults();
+        
+        // The loop schedules 5 timeouts, but they run later. We just check if confetti exists in win.
+        // To test it fully we'd need to mock setTimeout or wait 3s.
+        // For unit test, we just check if it was attached.
+        // Wait, handleCalculateResults calls setTimeout. Let's just wait 100ms and see if it fired at least once.
+        await new Promise(r => setTimeout(r, 100));
+        expect(confettiCalled > 0).to.be.true();
+    });
+
+    it('7. RenderHistory poprawnie generuje liste w panelu', async () => {
+        const win = await loadApp('index.html?room=HISTORY_ROOM');
+        const exports = win.__TEST_EXPORTS__;
+        
+        const fakeHistory = {
+            'key1': { score: '13', timestamp: 1000 },
+            'key2': { score: '34', timestamp: 2000 }
+        };
+        
+        exports.renderHistory(fakeHistory);
+        
+        const historyList = win.document.getElementById('history-list');
+        const items = historyList.querySelectorAll('li');
+        expect(items.length).to.equal(2);
+        
+        expect(items[0].innerText).to.include('Round 1');
+        expect(items[0].innerText).to.include('13');
+        expect(items[1].innerText).to.include('Round 2');
+        expect(items[1].innerText).to.include('34');
+        
+        const historyPanel = win.document.getElementById('history-panel');
+        expect(historyPanel.classList.contains('hidden')).to.be.false();
+    });
 });
 
 // Run Mocha after all scripts loaded

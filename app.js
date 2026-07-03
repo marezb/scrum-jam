@@ -220,8 +220,10 @@ function joinRoomOnline(roomId) {
 
     if (localStorage.getItem(`sp_admin_${roomId}`) === "true") {
         elements.closeRoomBtn.classList.remove('hidden');
+        elements.clearHistoryBtn.classList.remove('hidden');
     } else {
         elements.closeRoomBtn.classList.add('hidden');
+        elements.clearHistoryBtn.classList.add('hidden');
     }
 
     const url = new URL(window.location.href);
@@ -446,5 +448,6 @@ window.__TEST_EXPORTS__ = {
     setPlayersData: (data) => { playersData = data; },
     setIsRevealed: (rev) => { isRevealed = rev; },
     calculateResults: handleCalculateResults,
-    renderPlayers: (animate) => renderPlayers(playersData, isRevealed, animate)
+    renderPlayers: (animate) => renderPlayers(playersData, isRevealed, animate),
+    renderHistory: renderHistory
 };
