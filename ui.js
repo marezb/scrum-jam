@@ -76,7 +76,7 @@ export function updateDeckSelection(myVote, isRevealed) {
     });
 }
 
-export function renderPlayers(playersData, isRevealed, animate = false) {
+export function renderPlayers(playersData, isRevealed, animate = false, resetAnim = false) {
     elements.playersContainer.innerHTML = '';
     elements.spectatorsList.innerHTML = '';
 
@@ -100,6 +100,9 @@ export function renderPlayers(playersData, isRevealed, animate = false) {
     activePlayers.forEach((player, index) => {
         const el = document.createElement('div');
         el.className = 'player';
+        if (resetAnim) {
+            el.style.animation = `shuffleDeal 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) ${index * 80}ms backwards`;
+        }
 
         const card = document.createElement('div');
         card.className = 'player-card';
@@ -120,6 +123,7 @@ export function renderPlayers(playersData, isRevealed, animate = false) {
                     }, index * 150 + 100);
                 } else {
                     card.classList.add('revealed');
+                    card.classList.add('no-anim');
                     card.innerText = player.vote;
                     if (FIB_COLORS[player.vote]) {
                         card.style.backgroundColor = FIB_COLORS[player.vote].bg;

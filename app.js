@@ -1,7 +1,7 @@
-import { generateId, verifyPassword, POKER_CARDS, FIB_COLORS, firebaseConfig } from './config.js?v=7';
-import { elements, screens, showScreen, renderDeck, updateDeckSelection, renderPlayers } from './ui.js?v=7';
-import { calculateAverage, getClosestFibonacci, checkAutoRevealCondition } from './game-logic.js?v=7';
-import * as db from './firebase-service.js?v=7';
+import { generateId, verifyPassword, POKER_CARDS, FIB_COLORS, firebaseConfig } from './config.js?v=12';
+import { elements, screens, showScreen, renderDeck, updateDeckSelection, renderPlayers } from './ui.js?v=12';
+import { calculateAverage, getClosestFibonacci, checkAutoRevealCondition } from './game-logic.js?v=12';
+import * as db from './firebase-service.js?v=12';
 
 // State variables
 let currentPlayerId = localStorage.getItem('sp_playerId');
@@ -16,6 +16,7 @@ let currentRoomId = null;
 let isRevealed = false;
 let isOfflineMode = localStorage.getItem('sp_offlineMode') === 'true';
 let playersData = {};
+let currentRoundNumber = 1;
 
 // === Initialization ===
 function init() {
@@ -200,7 +201,7 @@ elements.resetBtn.addEventListener('click', () => {
     if (isOfflineMode) {
         isRevealed = false;
         Object.keys(playersData).forEach(pId => { playersData[pId].vote = null; });
-        updateGameStateOffline();
+        updateGameStateOffline(false, null, currentName, true);
     } else {
         db.clearAllVotes(currentRoomId, playersData, currentName);
     }
@@ -273,8 +274,9 @@ function joinRoomOnline(roomId) {
             const wasRevealed = isRevealed;
             isRevealed = state.revealed;
             const animate = isRevealed && !wasRevealed;
+            const resetAnim = !isRevealed && wasRevealed;
             updateUIState(state.revealedBy, state.resetBy);
-            renderPlayers(playersData, isRevealed, animate);
+            renderPlayers(playersData, isRevealed, animate, resetAnim);
         },
         onRoomClosed: () => {
             alert("This room has been closed by the admin.");
@@ -326,7 +328,7 @@ function joinRoomOffline(roomId) {
     updateGameStateOffline();
 }
 
-function updateGameStateOffline(animate = false, revealedBy = null, resetBy = null) {
+function updateGameStateOffline(animate = false, revealedBy = null, resetBy = null, resetAnim = false) {
     updateUIState(revealedBy, resetBy);
     if (!isRevealed) {
         Object.keys(playersData).forEach(pId => {
@@ -335,7 +337,7 @@ function updateGameStateOffline(animate = false, revealedBy = null, resetBy = nu
             }
         });
     }
-    renderPlayers(playersData, isRevealed, animate);
+    renderPlayers(playersData, isRevealed, animate, resetAnim);
     updateDeckSelection(playersData[currentPlayerId]?.vote, isRevealed);
 }
 
@@ -358,7 +360,7 @@ function updateUIState(revealedBy = null, resetBy = null) {
         elements.resultsArea.classList.add('hidden');
         elements.statsPanel.classList.add('hidden');
         if (resetBy && elements.revealedByInfo) {
-            elements.revealedByInfo.innerText = `New round started by ${resetBy}`;
+            elements.revealedByInfo.innerHTML = `<strong style="font-size: 1.1em; color: var(--text-main);">Round ${currentRoundNumber}</strong><br><span style="font-style: italic;">Started by ${resetBy}</span>`;
             elements.revealedByInfo.classList.remove('hidden');
         } else if (elements.revealedByInfo) {
             elements.revealedByInfo.classList.add('hidden');
@@ -386,8 +388,13 @@ function renderHistory(historyObj) {
             roundCounter++;
             elements.historyList.appendChild(li);
         });
+        currentRoundNumber = roundCounter;
+        
+        // Auto-scroll to the bottom to always show the newest round
+        elements.historyList.scrollTop = elements.historyList.scrollHeight;
     } else {
         elements.historyPanel.classList.add('hidden');
+        currentRoundNumber = 1;
     }
 }
 
@@ -407,18 +414,21 @@ function handleCalculateResults() {
         const divLine = `${res.sum} / ${res.count} = ${res.average.toFixed(1)}`;
         elements.statsEquation.innerHTML = `Calculation:<br>${sumLine}<br>${divLine}`;
         elements.statsClosest.innerHTML = `Closest Fibonacci: <strong>${getClosestFibonacci(res.average)}</strong>`;
-        // Trigger confetti on unanimous vote (if at least one vote exists and all are equal)
-        if (res.count > 0 && res.equationParts.every(val => val === res.equationParts[0])) {
+        // Trigger confetti on unanimous vote (if at least two votes exist and all are equal)
+        if (res.count > 1 && res.equationParts.every(val => val === res.equationParts[0])) {
             if (window.confetti) {
-                for (let i = 0; i < 5; i++) {
+                for (let i = 0; i < 4; i++) {
                     setTimeout(() => {
                         confetti({
-                            particleCount: 150,
-                            spread: 90,
-                            origin: { y: 0.5 },
-                            zIndex: 9999
+                            particleCount: 120,
+                            spread: 100,
+                            origin: { y: 0.6 },
+                            zIndex: 9999,
+                            ticks: 400,
+                            gravity: 0.5,
+                            startVelocity: 35
                         });
-                    }, i * 600); // 600ms gap between explosions
+                    }, i * 1000); // 1000ms gap between explosions for a longer effect
                 }
             }
         }
