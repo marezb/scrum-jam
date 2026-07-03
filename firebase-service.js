@@ -24,8 +24,12 @@ export function createRoom(roomId) {
 }
 
 export function closeRoom(roomId) {
+    alert("System: Uruchamiam nową funkcję kasowania (v5) dla pokoju " + roomId);
     console.warn("Completely deleting room from database:", roomId);
-    return remove(ref(db, `rooms/${roomId}`));
+    // Explicitly remove children in case Firebase security rules prevent deleting the parent node directly
+    remove(ref(db, `rooms/${roomId}/state`));
+    remove(ref(db, `rooms/${roomId}/players`));
+    return remove(ref(db, `rooms/${roomId}/metadata`));
 }
 
 export function joinRoom(roomId, playerId, playerData, callbacks) {

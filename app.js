@@ -1,7 +1,7 @@
-import { generateId, verifyPassword, POKER_CARDS, firebaseConfig } from './config.js?v=4';
-import { elements, screens, showScreen, renderDeck, updateDeckSelection, renderPlayers } from './ui.js?v=4';
-import { calculateAverage, getClosestFibonacci, checkAutoRevealCondition } from './game-logic.js?v=4';
-import * as db from './firebase-service.js?v=4';
+import { generateId, verifyPassword, POKER_CARDS, firebaseConfig } from './config.js?v=5';
+import { elements, screens, showScreen, renderDeck, updateDeckSelection, renderPlayers } from './ui.js?v=5';
+import { calculateAverage, getClosestFibonacci, checkAutoRevealCondition } from './game-logic.js?v=5';
+import * as db from './firebase-service.js?v=5';
 
 // State variables
 let currentPlayerId = localStorage.getItem('sp_playerId');
