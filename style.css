@@ -379,6 +379,7 @@ input[type="text"]:focus, input[type="password"]:focus, textarea:focus {
     gap: 8px;
     max-height: 300px;
     overflow-y: auto;
+    padding-right: 12px;
 }
 .history-panel li {
     font-size: 0.95rem;
@@ -501,7 +502,7 @@ input[type="text"]:focus, input[type="password"]:focus, textarea:focus {
 }
 
 @keyframes shuffleDeal {
-    0% { transform: translateY(-50px) scale(0.5) rotate(-15deg); opacity: 0; }
+    0% { transform: translateY(-100px) scale(0.5) rotate(-25deg); opacity: 0; }
     100% { transform: translateY(0) scale(1) rotate(0); opacity: 1; }
 }
 
@@ -624,7 +625,7 @@ input[type="text"]:focus, input[type="password"]:focus, textarea:focus {
     background: #334155;
 }
 
-/* trigger deployment 12 */
+/* trigger deployment 15 */
 
 .results-area:not(.hidden):not(.fade-out) {
     animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;

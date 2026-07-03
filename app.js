@@ -1,7 +1,7 @@
-import { generateId, verifyPassword, POKER_CARDS, FIB_COLORS, firebaseConfig } from './config.js?v=16';
-import { elements, screens, showScreen, renderDeck, updateDeckSelection, renderPlayers } from './ui.js?v=16';
-import { calculateAverage, getClosestFibonacci, checkAutoRevealCondition } from './game-logic.js?v=16';
-import * as db from './firebase-service.js?v=16';
+import { generateId, verifyPassword, POKER_CARDS, FIB_COLORS, firebaseConfig } from './config.js?v=18';
+import { elements, screens, showScreen, renderDeck, updateDeckSelection, renderPlayers } from './ui.js?v=18';
+import { calculateAverage, getClosestFibonacci, checkAutoRevealCondition } from './game-logic.js?v=18';
+import * as db from './firebase-service.js?v=18';
 
 function spawnRestingConfetti() {
     const colors = ['#26ccff', '#a25afd', '#ff5e7e', '#88ff5a', '#fcff42', '#ffa62d', '#ff36ff'];

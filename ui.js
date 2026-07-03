@@ -83,8 +83,17 @@ export function renderPlayers(playersData, isRevealed, animate = false, resetAni
     const allPlayers = Object.values(playersData).sort((a, b) => a.joinedAt - b.joinedAt);
     if (allPlayers.length === 0) return;
 
-    const activePlayers = allPlayers.filter(p => p.role !== 'spectator');
+    let activePlayers = allPlayers.filter(p => p.role !== 'spectator');
     const spectators = allPlayers.filter(p => p.role === 'spectator');
+
+    if (isRevealed) {
+        activePlayers.sort((a, b) => {
+            const valA = a.vote ? POKER_CARDS.indexOf(a.vote) : 999;
+            const valB = b.vote ? POKER_CARDS.indexOf(b.vote) : 999;
+            if (valA === valB) return a.joinedAt - b.joinedAt;
+            return valA - valB;
+        });
+    }
 
     if (spectators.length > 0) {
         elements.spectatorsPanel.classList.remove('hidden');
@@ -101,7 +110,7 @@ export function renderPlayers(playersData, isRevealed, animate = false, resetAni
         const el = document.createElement('div');
         el.className = 'player';
         if (resetAnim) {
-            el.style.animation = `shuffleDeal 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) ${index * 80}ms backwards`;
+            el.style.animation = `shuffleDeal 2s cubic-bezier(0.16, 1, 0.3, 1) ${index * 400}ms backwards`;
         }
 
         const card = document.createElement('div');
