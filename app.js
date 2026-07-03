@@ -1,7 +1,7 @@
-import { generateId, verifyPassword, POKER_CARDS, FIB_COLORS, firebaseConfig } from './config.js?v=6';
-import { elements, screens, showScreen, renderDeck, updateDeckSelection, renderPlayers } from './ui.js?v=5';
-import { calculateAverage, getClosestFibonacci, checkAutoRevealCondition } from './game-logic.js?v=5';
-import * as db from './firebase-service.js?v=5';
+import { generateId, verifyPassword, POKER_CARDS, FIB_COLORS, firebaseConfig } from './config.js?v=7';
+import { elements, screens, showScreen, renderDeck, updateDeckSelection, renderPlayers } from './ui.js?v=7';
+import { calculateAverage, getClosestFibonacci, checkAutoRevealCondition } from './game-logic.js?v=7';
+import * as db from './firebase-service.js?v=7';
 
 // State variables
 let currentPlayerId = localStorage.getItem('sp_playerId');
@@ -202,8 +202,7 @@ elements.resetBtn.addEventListener('click', () => {
         Object.keys(playersData).forEach(pId => { playersData[pId].vote = null; });
         updateGameStateOffline();
     } else {
-        db.clearAllVotes(currentRoomId, playersData);
-        db.addNewRoundHistory(currentRoomId, currentName);
+        db.clearAllVotes(currentRoomId, playersData, currentName);
     }
 });
 
