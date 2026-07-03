@@ -18,7 +18,8 @@ export function initFirebase(config) {
 export function createRoom(roomId) {
     return set(ref(db, `rooms/${roomId}/metadata`), {
         status: 'active',
-        createdAt: Date.now()
+        createdAt: Date.now(),
+        lastActive: Date.now()
     });
 }
 
@@ -31,6 +32,7 @@ export function joinRoom(roomId, playerId, playerData, callbacks) {
     
     // Register player
     set(playerRef, playerData);
+    update(ref(db, `rooms/${roomId}/metadata`), { lastActive: Date.now() });
 
     // Remove player on disconnect
     onDisconnect(playerRef).remove();
@@ -57,10 +59,12 @@ export function joinRoom(roomId, playerId, playerData, callbacks) {
 }
 
 export function updateVote(roomId, playerId, vote) {
+    update(ref(db, `rooms/${roomId}/metadata`), { lastActive: Date.now() });
     return update(ref(db, `rooms/${roomId}/players/${playerId}`), { vote });
 }
 
 export function updateRevealedState(roomId, revealed, revealedBy = null) {
+    update(ref(db, `rooms/${roomId}/metadata`), { lastActive: Date.now() });
     return update(ref(db, `rooms/${roomId}/state`), { revealed, revealedBy });
 }
 
@@ -68,6 +72,7 @@ export function clearAllVotes(roomId, playersData) {
     const updates = {};
     updates[`rooms/${roomId}/state/revealed`] = false;
     updates[`rooms/${roomId}/state/revealedBy`] = null;
+    updates[`rooms/${roomId}/metadata/lastActive`] = Date.now();
 
     Object.keys(playersData).forEach(pId => {
         updates[`rooms/${roomId}/players/${pId}/vote`] = null;
@@ -86,7 +91,10 @@ export async function fetchActiveRooms(callback) {
             if (rooms) {
                 for (const [id, data] of Object.entries(rooms)) {
                     if (data.metadata && data.metadata.status === 'active') {
-                        active.push(id);
+                        active.push({
+                            id: id,
+                            lastActive: data.metadata.lastActive || data.metadata.createdAt || null
+                        });
                     }
                 }
             }
@@ -101,7 +109,10 @@ export async function fetchActiveRooms(callback) {
                     try {
                         const snapshot = await get(ref(db, `rooms/${roomId}/metadata`));
                         if (snapshot.exists() && snapshot.val().status === 'active') {
-                            active.push(roomId);
+                            active.push({
+                                id: roomId,
+                                lastActive: snapshot.val().lastActive || snapshot.val().createdAt || null
+                            });
                         }
                     } catch (err) {
                         // ignore errors for individual rooms

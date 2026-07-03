@@ -111,6 +111,18 @@ elements.joinForm.addEventListener('submit', async (e) => {
     }
 });
 
+function formatTimeAgo(timestamp) {
+    if (!timestamp) return 'Unknown';
+    const seconds = Math.floor((Date.now() - timestamp) / 1000);
+    if (seconds < 60) return 'Just now';
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes}m ago`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours}h ago`;
+    const days = Math.floor(hours / 24);
+    return `${days}d ago`;
+}
+
 function renderActiveRooms(activeRooms) {
     elements.activeRoomsList.innerHTML = '';
     if (activeRooms.length === 0) {
@@ -118,10 +130,16 @@ function renderActiveRooms(activeRooms) {
         return;
     }
 
-    activeRooms.forEach(roomId => {
+    activeRooms.forEach(room => {
+        const roomId = typeof room === 'string' ? room : room.id;
+        const lastActiveText = room.lastActive ? formatTimeAgo(room.lastActive) : 'Unknown';
+        
         const li = document.createElement('li');
         li.innerHTML = `
-            <span>Room: ${roomId}</span>
+            <div style="display: flex; flex-direction: column; gap: 4px;">
+                <span>Room: ${roomId}</span>
+                <span style="font-size: 0.75rem; color: var(--text-muted);">Last active: ${lastActiveText}</span>
+            </div>
             <div class="room-actions">
                 <button class="btn icon-btn copy-btn" data-room="${roomId}" title="Copy Link">Copy Link</button>
                 <button class="btn icon-btn close-btn" data-room="${roomId}" title="Close Room" style="color: #ef4444;">Close</button>
@@ -144,14 +162,9 @@ function renderActiveRooms(activeRooms) {
     document.querySelectorAll('.close-btn').forEach(btn => {
         btn.addEventListener('click', async (e) => {
             e.preventDefault();
-            const pwd = prompt("Enter Admin Password to close this room:");
-            if (pwd !== null) {
-                const isValid = await verifyPassword(pwd);
-                if (isValid) {
-                    db.closeRoom(e.target.dataset.room);
-                } else {
-                    alert("Access Denied");
-                }
+            const isConfirmed = confirm("Are you sure you want to close this room?");
+            if (isConfirmed) {
+                db.closeRoom(e.target.dataset.room);
             }
         });
     });
@@ -346,6 +359,18 @@ function handleCalculateResults() {
         const divLine = `${res.sum} / ${res.count} = ${res.average.toFixed(1)}`;
         elements.statsEquation.innerHTML = `Calculation:<br>${sumLine}<br>${divLine}`;
         elements.statsClosest.innerHTML = `Closest Fibonacci: <strong>${getClosestFibonacci(res.average)}</strong>`;
+        
+        // Trigger confetti on unanimous vote (if at least one vote exists and all are equal)
+        if (res.count > 0 && res.equationParts.every(val => val === res.equationParts[0])) {
+            if (window.confetti) {
+                confetti({
+                    particleCount: 150,
+                    spread: 90,
+                    origin: { y: 0.5 },
+                    zIndex: 9999
+                });
+            }
+        }
     } else {
         elements.averageScoreDisplay.innerText = "-";
         elements.statsEquation.innerHTML = "No numeric votes cast.";
