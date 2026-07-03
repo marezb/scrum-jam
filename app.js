@@ -359,16 +359,19 @@ function handleCalculateResults() {
         const divLine = `${res.sum} / ${res.count} = ${res.average.toFixed(1)}`;
         elements.statsEquation.innerHTML = `Calculation:<br>${sumLine}<br>${divLine}`;
         elements.statsClosest.innerHTML = `Closest Fibonacci: <strong>${getClosestFibonacci(res.average)}</strong>`;
-        
         // Trigger confetti on unanimous vote (if at least one vote exists and all are equal)
         if (res.count > 0 && res.equationParts.every(val => val === res.equationParts[0])) {
             if (window.confetti) {
-                confetti({
-                    particleCount: 150,
-                    spread: 90,
-                    origin: { y: 0.5 },
-                    zIndex: 9999
-                });
+                for (let i = 0; i < 5; i++) {
+                    setTimeout(() => {
+                        confetti({
+                            particleCount: 150,
+                            spread: 90,
+                            origin: { y: 0.5 },
+                            zIndex: 9999
+                        });
+                    }, i * 600); // 600ms gap between explosions
+                }
             }
         }
     } else {
