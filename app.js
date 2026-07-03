@@ -274,7 +274,7 @@ function joinRoomOnline(roomId) {
             const wasRevealed = isRevealed;
             isRevealed = state.revealed;
             const animate = isRevealed && !wasRevealed;
-            updateUIState(state.revealedBy);
+            updateUIState(state.revealedBy, state.resetBy);
             renderPlayers(playersData, isRevealed, animate);
         },
         onRoomClosed: () => {
@@ -327,8 +327,8 @@ function joinRoomOffline(roomId) {
     updateGameStateOffline();
 }
 
-function updateGameStateOffline(animate = false, revealedBy = null) {
-    updateUIState(revealedBy);
+function updateGameStateOffline(animate = false, revealedBy = null, resetBy = null) {
+    updateUIState(revealedBy, resetBy);
     if (!isRevealed) {
         Object.keys(playersData).forEach(pId => {
             if (pId.startsWith('fake_') && playersData[pId].vote === null && playersData[pId].role !== 'spectator') {
@@ -340,7 +340,7 @@ function updateGameStateOffline(animate = false, revealedBy = null) {
     updateDeckSelection(playersData[currentPlayerId]?.vote, isRevealed);
 }
 
-function updateUIState(revealedBy = null) {
+function updateUIState(revealedBy = null, resetBy = null) {
     if (isRevealed) {
         elements.revealBtn.classList.add('hidden');
         elements.resetBtn.classList.remove('hidden');
@@ -358,7 +358,10 @@ function updateUIState(revealedBy = null) {
         elements.resetBtn.classList.add('hidden');
         elements.resultsArea.classList.add('hidden');
         elements.statsPanel.classList.add('hidden');
-        if (elements.revealedByInfo) {
+        if (resetBy && elements.revealedByInfo) {
+            elements.revealedByInfo.innerText = `New round started by ${resetBy}`;
+            elements.revealedByInfo.classList.remove('hidden');
+        } else if (elements.revealedByInfo) {
             elements.revealedByInfo.classList.add('hidden');
         }
     }
@@ -371,20 +374,17 @@ function renderHistory(historyObj) {
         elements.historyPanel.classList.remove('hidden');
         let roundCounter = 1;
         historyEntries.forEach((entry) => {
+            if (entry.type === 'new_round') return; // ignore legacy new_round entries
             const li = document.createElement('li');
-            if (entry.type === 'new_round') {
-                li.innerHTML = `<span style="font-size: 0.85rem; font-style: italic; color: var(--text-muted); width: 100%; text-align: center;">New round started by ${entry.by}</span>`;
-            } else {
-                let scoreText = entry.score;
-                let bgStyle = '';
-                let textStyle = '';
-                if (FIB_COLORS[entry.score]) {
-                    bgStyle = `background-color: ${FIB_COLORS[entry.score].bg};`;
-                    textStyle = `color: ${FIB_COLORS[entry.score].text};`;
-                }
-                li.innerHTML = `<span>Round ${roundCounter}</span> <strong style="${bgStyle} ${textStyle} padding: 2px 10px; border-radius: 12px;">${scoreText}</strong>`;
-                roundCounter++;
+            let scoreText = entry.score;
+            let bgStyle = '';
+            let textStyle = '';
+            if (FIB_COLORS[entry.score]) {
+                bgStyle = `background-color: ${FIB_COLORS[entry.score].bg};`;
+                textStyle = `color: ${FIB_COLORS[entry.score].text};`;
             }
+            li.innerHTML = `<span>Round ${roundCounter}</span> <strong style="${bgStyle} ${textStyle} padding: 2px 10px; border-radius: 12px;">${scoreText}</strong>`;
+            roundCounter++;
             elements.historyList.appendChild(li);
         });
     } else {

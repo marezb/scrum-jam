@@ -576,4 +576,19 @@ input[type="text"]:focus, input[type="password"]:focus, textarea:focus {
     }
 }
 
-/* trigger deployment 3 */
+/* Custom Scrollbar for history panel */
+.history-panel ul::-webkit-scrollbar {
+    width: 6px;
+}
+.history-panel ul::-webkit-scrollbar-track {
+    background: transparent;
+}
+.history-panel ul::-webkit-scrollbar-thumb {
+    background: #1e293b; /* dark slate/navy, slightly lighter than bg */
+    border-radius: 10px;
+}
+.history-panel ul::-webkit-scrollbar-thumb:hover {
+    background: #334155;
+}
+
+/* trigger deployment 4 */

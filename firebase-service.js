@@ -82,10 +82,11 @@ export function updateRevealedState(roomId, revealed, revealedBy = null) {
     return update(ref(db, `rooms/${roomId}/state`), { revealed, revealedBy });
 }
 
-export function clearAllVotes(roomId, playersData) {
+export function clearAllVotes(roomId, playersData, resetByName = null) {
     const updates = {};
     updates[`rooms/${roomId}/state/revealed`] = false;
     updates[`rooms/${roomId}/state/revealedBy`] = null;
+    updates[`rooms/${roomId}/state/resetBy`] = resetByName;
     updates[`rooms/${roomId}/metadata/lastActive`] = Date.now();
 
     Object.keys(playersData).forEach(pId => {
@@ -103,16 +104,6 @@ export function addRoundHistory(roomId, score) {
         timestamp: Date.now()
     });
 }
-
-export function addNewRoundHistory(roomId, byName) {
-    update(ref(db, `rooms/${roomId}/metadata`), { lastActive: Date.now() });
-    return push(ref(db, `rooms/${roomId}/history`), {
-        type: 'new_round',
-        by: byName,
-        timestamp: Date.now()
-    });
-}
-
 export function clearRoundHistory(roomId) {
     update(ref(db, `rooms/${roomId}/metadata`), { lastActive: Date.now() });
     return remove(ref(db, `rooms/${roomId}/history`));
