@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scrum Poker - Premium Planning</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- Login Screen -->
+    <div id="login-screen" class="screen active">
+        <div class="glass-panel login-panel">
+            <div class="logo">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 22 12 17 22 22 12 2"/></svg>
+                <h1>Scrum Poker</h1>
+            </div>
+            <p class="subtitle">Estimate tasks with your team in real-time.</p>
+            
+            <form id="join-form">
+                <div class="input-group" id="name-group">
+                    <label for="player-name">Your name</label>
+                    <input type="text" id="player-name" placeholder="e.g. John Doe" required>
+                </div>
+                <div class="input-group hidden" id="room-id-group">
+                    <label for="room-id">Room ID</label>
+                    <input type="text" id="room-id" disabled>
+                </div>
+                <div class="input-group" id="password-group">
+                    <label for="room-password">Admin Password</label>
+                    <input type="password" id="room-password">
+                </div>
+                <div class="input-group checkbox-group hidden" id="spectator-group">
+                    <label>
+                        <input type="checkbox" id="spectator-mode">
+                        Netra Join as spectator
+                    </label>
+                </div>
+                <button type="submit" id="join-btn" class="btn primary-btn">Create Room</button>
+            </form>
+
+            <div id="admin-dashboard" class="hidden" style="width: 100%;">
+                <hr style="border: none; border-top: 1px solid var(--panel-border); margin: 25px 0;">
+                <h3 style="margin-bottom: 15px; font-size: 1.1rem; color: var(--text-muted);">Active Rooms</h3>
+                <ul id="active-rooms-list" class="rooms-list"></ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Game Screen (Room) -->
+    <div id="game-screen" class="screen">
+        <header class="game-header">
+            <div class="logo small">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 22 12 17 22 22 12 2"/></svg>
+                <h2>Scrum Poker</h2>
+            </div>
+            <div class="room-info">
+                <button id="close-room-btn" class="btn hidden" style="border: 1px solid #ef4444; color: #ef4444; background: transparent; padding: 6px 12px; font-size: 0.85rem;">Close Room</button>
+                <span>Room: <strong id="display-room-id">...</strong></span>
+                <button id="copy-link-btn" class="btn icon-btn" title="Copy room link">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                </button>
+            </div>
+        </header>
+
+        <main class="game-board">
+            <aside class="spectators-panel hidden" id="spectators-panel">
+                <h4>Spectators</h4>
+                <ul id="spectators-list"></ul>
+            </aside>
+            <div class="board-center">
+                <div class="controls-area">
+                    <button id="reveal-btn" class="btn primary-btn">Reveal cards</button>
+                    <button id="reset-btn" class="btn secondary-btn hidden">New round</button>
+                    <div id="revealed-by-info" class="hidden" style="margin-top: 10px; font-size: 0.9rem; color: var(--text-muted); text-align: center;"></div>
+                </div>
+                <div id="results-area" class="results-area hidden">
+                    <h3>Result: <span id="average-score">-</span></h3>
+                </div>
+                
+                <div id="stats-panel" class="stats-panel hidden">
+                    <p id="stats-equation"></p>
+                    <p id="stats-closest"></p>
+                </div>
+            </div>
+
+            <!-- Players will be rendered here -->
+            <div id="players-container" class="players-container"></div>
+        </main>
+
+        <footer class="deck-area">
+            <h3 class="deck-title">Choose your card ⚡</h3>
+            <div id="cards-container" class="cards-container">
+                <!-- Cards generated in JS -->
+            </div>
+        </footer>
+    </div>
+
+
+    <script type="module" src="app.js?v=2"></script>
+</body>
+</html>

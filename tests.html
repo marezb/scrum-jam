@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Scrum Poker - Unit Tests</title>
+    <link href="mocha.css" rel="stylesheet" />
+    <style>
+        body { font-family: sans-serif; background: #111; color: #fff; }
+        #mocha-stats { color: #fff; }
+        #mocha-report .suite .suite h1 { color: #fff; }
+        #mocha-report .pass .test-title { color: #0f0; }
+        #mocha-report .fail .test-title { color: #f00; }
+        h1 { margin-left: 20px; }
+    </style>
+</head>
+<body>
+    <h1>Scrum Poker Test Suite</h1>
+    <div id="mocha"></div>
+    <script src="chai.js"></script>
+    <script src="mocha.js"></script>
+    <script>mocha.setup('bdd')</script>
+    <script src="tests.js"></script>
+</body>
+</html>
