@@ -139,11 +139,11 @@ export function renderPlayers(playersData, isRevealed, animate = false, resetAni
                 if (animate) {
                     setTimeout(() => {
                         card.classList.add('revealed');
-                        card.innerText = '😟';
+                        card.innerText = '😴';
                     }, index * 150 + 100);
                 } else {
                     card.classList.add('revealed');
-                    card.innerText = '😟';
+                    card.innerText = '😴';
                 }
             }
         }

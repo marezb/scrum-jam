@@ -1,7 +1,36 @@
-import { generateId, verifyPassword, POKER_CARDS, FIB_COLORS, firebaseConfig } from './config.js?v=12';
-import { elements, screens, showScreen, renderDeck, updateDeckSelection, renderPlayers } from './ui.js?v=12';
-import { calculateAverage, getClosestFibonacci, checkAutoRevealCondition } from './game-logic.js?v=12';
-import * as db from './firebase-service.js?v=12';
+import { generateId, verifyPassword, POKER_CARDS, FIB_COLORS, firebaseConfig } from './config.js?v=16';
+import { elements, screens, showScreen, renderDeck, updateDeckSelection, renderPlayers } from './ui.js?v=16';
+import { calculateAverage, getClosestFibonacci, checkAutoRevealCondition } from './game-logic.js?v=16';
+import * as db from './firebase-service.js?v=16';
+
+function spawnRestingConfetti() {
+    const colors = ['#26ccff', '#a25afd', '#ff5e7e', '#88ff5a', '#fcff42', '#ffa62d', '#ff36ff'];
+    const container = document.querySelector('.deck-area');
+    if (!container) return;
+    
+    for (let i = 0; i < 50; i++) {
+        setTimeout(() => {
+            if (!isRevealed) return; // don't spawn if round already reset
+            const conf = document.createElement('div');
+            conf.className = 'resting-confetti';
+            conf.style.left = (Math.random() * 95 + 2) + '%'; 
+            conf.style.top = (Math.random() * 85 + 5) + '%'; 
+            conf.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+            conf.style.setProperty('--rot', `${Math.random() * 360}deg`);
+            
+            // random shape: circle or square or rectangle
+            const shapeType = Math.random();
+            if (shapeType > 0.6) {
+                conf.style.borderRadius = '50%';
+            } else if (shapeType > 0.3) {
+                conf.style.width = '12px';
+                conf.style.height = '6px';
+            }
+            
+            container.appendChild(conf);
+        }, 1500 + Math.random() * 2500); // trickle in between 1.5s and 4.0s
+    }
+}
 
 // State variables
 let currentPlayerId = localStorage.getItem('sp_playerId');
@@ -345,10 +374,15 @@ function updateUIState(revealedBy = null, resetBy = null) {
     if (isRevealed) {
         elements.revealBtn.classList.add('hidden');
         elements.resetBtn.classList.remove('hidden');
+        
+        elements.resultsArea.classList.remove('fade-out');
+        elements.statsPanel.classList.remove('fade-out');
         elements.resultsArea.classList.remove('hidden');
         elements.statsPanel.classList.remove('hidden');
+
         if (revealedBy && elements.revealedByInfo) {
             elements.revealedByInfo.innerText = `Revealed by ${revealedBy}`;
+            elements.revealedByInfo.classList.remove('fade-out');
             elements.revealedByInfo.classList.remove('hidden');
         } else if (elements.revealedByInfo) {
             elements.revealedByInfo.classList.add('hidden');
@@ -357,14 +391,29 @@ function updateUIState(revealedBy = null, resetBy = null) {
     } else {
         elements.revealBtn.classList.remove('hidden');
         elements.resetBtn.classList.add('hidden');
-        elements.resultsArea.classList.add('hidden');
-        elements.statsPanel.classList.add('hidden');
-        if (resetBy && elements.revealedByInfo) {
-            elements.revealedByInfo.innerHTML = `<strong style="font-size: 1.1em; color: var(--text-main);">Round ${currentRoundNumber}</strong><br><span style="font-style: italic;">Started by ${resetBy}</span>`;
-            elements.revealedByInfo.classList.remove('hidden');
-        } else if (elements.revealedByInfo) {
-            elements.revealedByInfo.classList.add('hidden');
+        
+        elements.resultsArea.classList.add('fade-out');
+        elements.statsPanel.classList.add('fade-out');
+        if (elements.revealedByInfo && !resetBy) {
+            elements.revealedByInfo.classList.add('fade-out');
         }
+
+        setTimeout(() => {
+            if (!isRevealed) {
+                elements.resultsArea.classList.add('hidden');
+                elements.statsPanel.classList.add('hidden');
+                
+                if (resetBy && elements.revealedByInfo) {
+                    elements.revealedByInfo.innerHTML = `<strong style="font-size: 1.1em; color: var(--text-main);">Round ${currentRoundNumber}</strong><br><span style="font-style: italic;">Started by ${resetBy}</span>`;
+                    elements.revealedByInfo.classList.remove('fade-out');
+                    elements.revealedByInfo.classList.remove('hidden');
+                } else if (elements.revealedByInfo) {
+                    elements.revealedByInfo.classList.add('hidden');
+                }
+            }
+        }, 300);
+
+        document.querySelectorAll('.resting-confetti').forEach(el => el.remove());
     }
 }
 
@@ -430,6 +479,7 @@ function handleCalculateResults() {
                         });
                     }, i * 1000); // 1000ms gap between explosions for a longer effect
                 }
+                spawnRestingConfetti();
             }
         }
     } else {
