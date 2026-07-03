@@ -35,11 +35,7 @@ function init() {
             elements.roomIdGroup.classList.remove('hidden');
             elements.joinBtn.innerText = "Join Game";
 
-            if (currentName) {
-                setTimeout(() => elements.joinForm.dispatchEvent(new Event('submit')), 100);
-            } else {
-                showScreen('login');
-            }
+            showScreen('login');
         } else {
             showScreen('login');
         }
