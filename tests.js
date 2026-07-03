@@ -166,10 +166,10 @@ describe('Scrum Poker E2E & Unit Tests', function() {
         const cards = win.document.querySelectorAll('.player-card');
         expect(cards.length).to.equal(3);
         
-        // 8 is green (#caffbf), 89 is blue (#bde0fe), ? is default (no inline style)
-        expect(cards[0].style.backgroundColor).to.include('rgb(202, 255, 191)'); // #caffbf
-        expect(cards[1].style.backgroundColor).to.include('rgb(189, 224, 254)'); // #bde0fe
-        expect(cards[2].style.backgroundColor).to.equal('');
+        // 8 is blue (#a0c4ff), 89 is dark pink (#ff99c8), ? is dark grey (#343a40)
+        expect(cards[0].style.backgroundColor).to.include('rgb(160, 196, 255)');
+        expect(cards[1].style.backgroundColor).to.include('rgb(255, 153, 200)');
+        expect(cards[2].style.backgroundColor).to.include('rgb(52, 58, 64)');
     });
 
     it('6. Unanimous vote triggers confetti', async () => {

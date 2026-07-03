@@ -98,7 +98,17 @@ export function clearAllVotes(roomId, playersData) {
 export function addRoundHistory(roomId, score) {
     update(ref(db, `rooms/${roomId}/metadata`), { lastActive: Date.now() });
     return push(ref(db, `rooms/${roomId}/history`), {
+        type: 'round',
         score: score,
+        timestamp: Date.now()
+    });
+}
+
+export function addNewRoundHistory(roomId, byName) {
+    update(ref(db, `rooms/${roomId}/metadata`), { lastActive: Date.now() });
+    return push(ref(db, `rooms/${roomId}/history`), {
+        type: 'new_round',
+        by: byName,
         timestamp: Date.now()
     });
 }

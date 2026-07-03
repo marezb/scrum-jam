@@ -1,4 +1,4 @@
-import { generateId, verifyPassword, POKER_CARDS, firebaseConfig } from './config.js?v=5';
+import { generateId, verifyPassword, POKER_CARDS, FIB_COLORS, firebaseConfig } from './config.js?v=6';
 import { elements, screens, showScreen, renderDeck, updateDeckSelection, renderPlayers } from './ui.js?v=5';
 import { calculateAverage, getClosestFibonacci, checkAutoRevealCondition } from './game-logic.js?v=5';
 import * as db from './firebase-service.js?v=5';
@@ -203,6 +203,7 @@ elements.resetBtn.addEventListener('click', () => {
         updateGameStateOffline();
     } else {
         db.clearAllVotes(currentRoomId, playersData);
+        db.addNewRoundHistory(currentRoomId, currentName);
     }
 });
 
@@ -368,9 +369,22 @@ function renderHistory(historyObj) {
     const historyEntries = Object.values(historyObj).sort((a, b) => a.timestamp - b.timestamp);
     if (historyEntries.length > 0) {
         elements.historyPanel.classList.remove('hidden');
-        historyEntries.forEach((entry, i) => {
+        let roundCounter = 1;
+        historyEntries.forEach((entry) => {
             const li = document.createElement('li');
-            li.innerHTML = `<span>Round ${i + 1}</span> <strong>${entry.score}</strong>`;
+            if (entry.type === 'new_round') {
+                li.innerHTML = `<span style="font-size: 0.85rem; font-style: italic; color: var(--text-muted); width: 100%; text-align: center;">New round started by ${entry.by}</span>`;
+            } else {
+                let scoreText = entry.score;
+                let bgStyle = '';
+                let textStyle = '';
+                if (FIB_COLORS[entry.score]) {
+                    bgStyle = `background-color: ${FIB_COLORS[entry.score].bg};`;
+                    textStyle = `color: ${FIB_COLORS[entry.score].text};`;
+                }
+                li.innerHTML = `<span>Round ${roundCounter}</span> <strong style="${bgStyle} ${textStyle} padding: 2px 10px; border-radius: 12px;">${scoreText}</strong>`;
+                roundCounter++;
+            }
             elements.historyList.appendChild(li);
         });
     } else {

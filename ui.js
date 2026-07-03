@@ -113,12 +113,18 @@ export function renderPlayers(playersData, isRevealed, animate = false) {
                         card.classList.remove('has-voted');
                         card.classList.add('revealed');
                         card.innerText = player.vote;
-                        if (FIB_COLORS[player.vote]) card.style.backgroundColor = FIB_COLORS[player.vote];
+                        if (FIB_COLORS[player.vote]) {
+                            card.style.backgroundColor = FIB_COLORS[player.vote].bg;
+                            card.style.color = FIB_COLORS[player.vote].text;
+                        }
                     }, index * 150 + 100);
                 } else {
                     card.classList.add('revealed');
                     card.innerText = player.vote;
-                    if (FIB_COLORS[player.vote]) card.style.backgroundColor = FIB_COLORS[player.vote];
+                    if (FIB_COLORS[player.vote]) {
+                        card.style.backgroundColor = FIB_COLORS[player.vote].bg;
+                        card.style.color = FIB_COLORS[player.vote].text;
+                    }
                 }
             } else {
                 card.classList.add('has-voted');
