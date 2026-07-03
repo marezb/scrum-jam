@@ -76,18 +76,41 @@ export function clearAllVotes(roomId, playersData) {
     return update(ref(db), updates);
 }
 
-export function fetchActiveRooms(callback) {
+export async function fetchActiveRooms(callback) {
     if (!db) return;
-    onValue(ref(db, 'rooms'), (snapshot) => {
-        const rooms = snapshot.val();
-        const active = [];
-        if (rooms) {
-            for (const [id, data] of Object.entries(rooms)) {
-                if (data.metadata && data.metadata.status === 'active') {
-                    active.push(id);
+    
+    try {
+        onValue(ref(db, 'rooms'), (snapshot) => {
+            const rooms = snapshot.val();
+            const active = [];
+            if (rooms) {
+                for (const [id, data] of Object.entries(rooms)) {
+                    if (data.metadata && data.metadata.status === 'active') {
+                        active.push(id);
+                    }
                 }
             }
-        }
-        callback(active);
-    });
+            callback(active);
+        }, async (error) => {
+            console.warn("Could not read all rooms (likely permission denied). Falling back to local history.");
+            const active = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key.startsWith('sp_admin_')) {
+                    const roomId = key.replace('sp_admin_', '');
+                    try {
+                        const snapshot = await get(ref(db, `rooms/${roomId}/metadata`));
+                        if (snapshot.exists() && snapshot.val().status === 'active') {
+                            active.push(roomId);
+                        }
+                    } catch (err) {
+                        // ignore errors for individual rooms
+                    }
+                }
+            }
+            callback(active);
+        });
+    } catch (e) {
+        console.error("fetchActiveRooms error:", e);
+    }
 }

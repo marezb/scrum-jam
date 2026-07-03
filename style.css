@@ -309,7 +309,8 @@ input[type="text"]:focus, input[type="password"]:focus, textarea:focus {
     backdrop-filter: blur(10px);
     z-index: 10;
     min-width: 250px;
-    height: 180px;
+    min-height: 180px;
+    height: auto;
     margin: 0 auto;
     position: relative;
 }
