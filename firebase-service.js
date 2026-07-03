@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-import { getDatabase, ref, set, onValue, update, onDisconnect, get, child } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+import { getDatabase, ref, set, onValue, update, onDisconnect, get, child, remove } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
 
 let app;
 export let db;
@@ -24,7 +24,8 @@ export function createRoom(roomId) {
 }
 
 export function closeRoom(roomId) {
-    return update(ref(db, `rooms/${roomId}/metadata`), { status: 'closed' });
+    console.warn("Completely deleting room from database:", roomId);
+    return remove(ref(db, `rooms/${roomId}`));
 }
 
 export function joinRoom(roomId, playerId, playerData, callbacks) {
@@ -49,10 +50,10 @@ export function joinRoom(roomId, playerId, playerData, callbacks) {
         callbacks.onStateChange(state);
     });
 
-    // Listen to metadata to kick if closed
+    // Listen to metadata to kick if closed or deleted
     onValue(ref(db, `rooms/${roomId}/metadata`), (snapshot) => {
         const meta = snapshot.val();
-        if (meta && meta.status === 'closed') {
+        if (!meta || meta.status === 'closed') {
             callbacks.onRoomClosed();
         }
     });
