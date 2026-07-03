@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-import { getDatabase, ref, set, onValue, update, onDisconnect, get, child, remove } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+import { getDatabase, ref, set, onValue, update, onDisconnect, get, child, remove, push } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
 
 let app;
 export let db;
@@ -29,6 +29,7 @@ export function closeRoom(roomId) {
     // Explicitly remove children in case Firebase security rules prevent deleting the parent node directly
     remove(ref(db, `rooms/${roomId}/state`));
     remove(ref(db, `rooms/${roomId}/players`));
+    remove(ref(db, `rooms/${roomId}/history`));
     return remove(ref(db, `rooms/${roomId}/metadata`));
 }
 
@@ -61,6 +62,14 @@ export function joinRoom(roomId, playerId, playerData, callbacks) {
             callbacks.onRoomClosed();
         }
     });
+
+    // Listen to history
+    if (callbacks.onHistoryChange) {
+        onValue(ref(db, `rooms/${roomId}/history`), (snapshot) => {
+            const history = snapshot.val() || {};
+            callbacks.onHistoryChange(history);
+        });
+    }
 }
 
 export function updateVote(roomId, playerId, vote) {
@@ -84,6 +93,19 @@ export function clearAllVotes(roomId, playersData) {
     });
 
     return update(ref(db), updates);
+}
+
+export function addRoundHistory(roomId, score) {
+    update(ref(db, `rooms/${roomId}/metadata`), { lastActive: Date.now() });
+    return push(ref(db, `rooms/${roomId}/history`), {
+        score: score,
+        timestamp: Date.now()
+    });
+}
+
+export function clearRoundHistory(roomId) {
+    update(ref(db, `rooms/${roomId}/metadata`), { lastActive: Date.now() });
+    return remove(ref(db, `rooms/${roomId}/history`));
 }
 
 export async function fetchActiveRooms(callback) {

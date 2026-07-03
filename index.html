@@ -76,11 +76,7 @@
                 <ul id="spectators-list"></ul>
             </aside>
             <div class="board-center">
-                <div class="controls-area">
-                    <button id="reveal-btn" class="btn primary-btn">Reveal cards</button>
-                    <button id="reset-btn" class="btn secondary-btn hidden">New round</button>
-                    <div id="revealed-by-info" class="hidden" style="margin-top: 10px; font-size: 0.9rem; color: var(--text-muted); text-align: center;"></div>
-                </div>
+                <div id="revealed-by-info" class="hidden" style="margin-bottom: 15px; font-size: 0.9rem; color: var(--text-muted); text-align: center;"></div>
                 <div id="results-area" class="results-area hidden">
                     <h3>Result: <span id="average-score">-</span></h3>
                 </div>
@@ -93,6 +89,17 @@
 
             <!-- Players will be rendered here -->
             <div id="players-container" class="players-container"></div>
+            
+            <div class="controls-area controls-area-bottom">
+                <button id="reveal-btn" class="btn primary-btn">Reveal cards</button>
+                <button id="reset-btn" class="btn secondary-btn hidden">New round</button>
+            </div>
+
+            <aside class="history-panel hidden" id="history-panel">
+                <h4>Round History</h4>
+                <ul id="history-list"></ul>
+                <button id="clear-history-btn" class="btn secondary-btn" style="margin-top: 10px; font-size: 0.8rem; padding: 6px;">Clear History</button>
+            </aside>
         </main>
 
         <footer class="deck-area">

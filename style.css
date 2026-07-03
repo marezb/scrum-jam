@@ -309,7 +309,6 @@ input[type="text"]:focus, input[type="password"]:focus, textarea:focus {
     backdrop-filter: blur(10px);
     z-index: 10;
     min-width: 250px;
-    min-height: 260px;
     height: auto;
     margin: 0 auto;
     position: relative;
@@ -351,6 +350,56 @@ input[type="text"]:focus, input[type="password"]:focus, textarea:focus {
     gap: 10px;
     z-index: 20;
 }
+
+.history-panel {
+    position: absolute;
+    right: 20px;
+    top: 20px;
+    background: var(--panel-bg);
+    padding: 15px 20px;
+    border-radius: 16px;
+    border: 1px solid var(--panel-border);
+    backdrop-filter: blur(10px);
+    min-width: 200px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    z-index: 20;
+}
+.history-panel h4 {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+.history-panel ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+.history-panel li {
+    font-size: 0.95rem;
+    color: var(--text-main);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.controls-area-bottom {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 30px;
+    margin-bottom: 20px;
+    width: 100%;
+}
+
 .spectators-panel h4 {
     font-size: 0.85rem;
     color: var(--text-muted);

@@ -1,4 +1,4 @@
-import { POKER_CARDS } from './config.js?v=2';
+import { POKER_CARDS, FIB_COLORS } from './config.js?v=6';
 
 export const elements = {
     // Login Screen
@@ -31,7 +31,10 @@ export const elements = {
     closeRoomBtn: document.getElementById('close-room-btn'),
     spectatorsPanel: document.getElementById('spectators-panel'),
     spectatorsList: document.getElementById('spectators-list'),
-    deckArea: document.querySelector('.deck-area')
+    deckArea: document.querySelector('.deck-area'),
+    historyPanel: document.getElementById('history-panel'),
+    historyList: document.getElementById('history-list'),
+    clearHistoryBtn: document.getElementById('clear-history-btn')
 };
 
 export const screens = {
@@ -110,10 +113,12 @@ export function renderPlayers(playersData, isRevealed, animate = false) {
                         card.classList.remove('has-voted');
                         card.classList.add('revealed');
                         card.innerText = player.vote;
+                        if (FIB_COLORS[player.vote]) card.style.backgroundColor = FIB_COLORS[player.vote];
                     }, index * 150 + 100);
                 } else {
                     card.classList.add('revealed');
                     card.innerText = player.vote;
+                    if (FIB_COLORS[player.vote]) card.style.backgroundColor = FIB_COLORS[player.vote];
                 }
             } else {
                 card.classList.add('has-voted');

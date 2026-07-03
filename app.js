@@ -187,6 +187,10 @@ elements.revealBtn.addEventListener('click', () => {
         isRevealed = true;
         updateGameStateOffline(true, currentName);
     } else {
+        const res = calculateAverage(playersData);
+        if (res) {
+            db.addRoundHistory(currentRoomId, getClosestFibonacci(res.average));
+        }
         db.updateRevealedState(currentRoomId, true, currentName);
     }
 });
@@ -252,6 +256,14 @@ function joinRoomOnline(roomId) {
             renderPlayers(playersData, isRevealed);
             updateDeckSelection(playersData[currentPlayerId]?.vote, isRevealed);
             if (!isRevealed && checkAutoRevealCondition(playersData)) {
+                // To avoid multiple history entries, only the first active player pushes it
+                const activeIds = Object.keys(playersData).filter(id => playersData[id].role !== 'spectator').sort();
+                if (activeIds[0] === currentPlayerId) {
+                    const res = calculateAverage(playersData);
+                    if (res) {
+                        db.addRoundHistory(currentRoomId, getClosestFibonacci(res.average));
+                    }
+                }
                 db.updateRevealedState(currentRoomId, true, "System (Auto)");
             }
         },
@@ -265,6 +277,9 @@ function joinRoomOnline(roomId) {
         onRoomClosed: () => {
             alert("This room has been closed by the admin.");
             window.location.href = window.location.pathname;
+        },
+        onHistoryChange: (history) => {
+            renderHistory(history);
         }
     });
 }
@@ -345,6 +360,28 @@ function updateUIState(revealedBy = null) {
         }
     }
 }
+
+function renderHistory(historyObj) {
+    elements.historyList.innerHTML = '';
+    const historyEntries = Object.values(historyObj).sort((a, b) => a.timestamp - b.timestamp);
+    if (historyEntries.length > 0) {
+        elements.historyPanel.classList.remove('hidden');
+        historyEntries.forEach((entry, i) => {
+            const li = document.createElement('li');
+            li.innerHTML = `<span>Round ${i + 1}</span> <strong>${entry.score}</strong>`;
+            elements.historyList.appendChild(li);
+        });
+    } else {
+        elements.historyPanel.classList.add('hidden');
+    }
+}
+
+elements.clearHistoryBtn.addEventListener('click', () => {
+    if (!currentRoomId || isOfflineMode) return;
+    if (confirm("Are you sure you want to clear the round history for everyone?")) {
+        db.clearRoundHistory(currentRoomId);
+    }
+});
 
 function handleCalculateResults() {
     const res = calculateAverage(playersData);

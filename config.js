@@ -1,4 +1,17 @@
 export const POKER_CARDS = ['0.5', '1', '2', '3', '5', '8', '13', '21', '34', '55', '89', '?'];
+export const FIB_COLORS = {
+    '0.5': '#f8f9fa',
+    '1': '#ffc8dd',
+    '2': '#ffafcc',
+    '3': '#cdb4db',
+    '5': '#fdffb6',
+    '8': '#caffbf', // green
+    '13': '#ffd6a5',
+    '21': '#ffadad',
+    '34': '#a0c4ff',
+    '55': '#9bf6ff',
+    '89': '#bde0fe', // blue
+};
 export const ADMIN_PASSWORD_HASH = "7183d83771679998019378c5c8b847e40f13ecd0ef2e7b3610650d27b2ff32a8";
 
 export async function verifyPassword(password) {
