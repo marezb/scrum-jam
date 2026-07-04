@@ -566,6 +566,43 @@ describe('Scrum Poker E2E & Unit Tests', function() {
         // By default, close-room-btn has class 'hidden'
         expect(closeBtn.classList.contains('hidden')).to.be.true();
     });
+
+    it('28. Story # input jest widoczny podczas głosowania i nie kasuje się po reveal', async () => {
+        localStorage.setItem('sp_offlineMode', 'true');
+        const win = await loadApp('index.html?room=STORY_VIS');
+        const doc = win.document;
+
+        // Story input should be visible (outside reset-controls-group)
+        const storyInput = doc.getElementById('story-id-input');
+        expect(storyInput !== null).to.be.true();
+        
+        // Story input should NOT be inside reset-controls-group
+        const resetGroup = doc.getElementById('reset-controls-group');
+        expect(resetGroup.contains(storyInput)).to.be.false();
+        
+        // Set story value
+        storyInput.value = 'PROJ-99';
+        
+        // Simulate reveal (click reveal button)
+        const revealBtn = doc.getElementById('reveal-btn');
+        revealBtn.click();
+        await new Promise(r => setTimeout(r, 200));
+        
+        // Story value should persist
+        expect(storyInput.value).to.equal('PROJ-99');
+    });
+
+    it('29. Timer input - max 60, step 10, puste dla zera', async () => {
+        localStorage.setItem('sp_offlineMode', 'true');
+        const win = await loadApp('index.html?room=TIMER_CFG');
+        const doc = win.document;
+
+        const timerInput = doc.getElementById('auto-timer-input');
+        expect(timerInput !== null).to.be.true();
+        expect(timerInput.max).to.equal('60');
+        expect(timerInput.step).to.equal('10');
+        expect(timerInput.min).to.equal('0');
+    });
 });
 
 // Run Mocha after all scripts loaded

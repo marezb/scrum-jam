@@ -1,7 +1,7 @@
-import { generateId, verifyPassword, POKER_CARDS, FIB_COLORS, firebaseConfig } from './config.js?v=21';
-import { elements, screens, showScreen, renderDeck, updateDeckSelection, renderPlayers } from './ui.js?v=21';
-import { calculateAverage, getClosestFibonacci, checkAutoRevealCondition } from './game-logic.js?v=21';
-import * as db from './firebase-service.js?v=21';
+import { generateId, verifyPassword, POKER_CARDS, FIB_COLORS, firebaseConfig } from './config.js?v=22';
+import { elements, screens, showScreen, renderDeck, updateDeckSelection, renderPlayers } from './ui.js?v=22';
+import { calculateAverage, getClosestFibonacci, checkAutoRevealCondition } from './game-logic.js?v=22';
+import * as db from './firebase-service.js?v=22';
 
 function spawnRestingConfetti() {
     const colors = ['#26ccff', '#a25afd', '#ff5e7e', '#88ff5a', '#fcff42', '#ffa62d', '#ff36ff'];
@@ -359,10 +359,27 @@ elements.resetBtn.addEventListener('click', () => {
     elements.storyIdInput.value = '';
 });
 
+// Timer: only allow spinner arrows, no keyboard typing
+elements.autoTimerInput.addEventListener('keydown', (e) => {
+    // Allow ArrowUp, ArrowDown, Tab only
+    if (!['ArrowUp', 'ArrowDown', 'Tab'].includes(e.key)) {
+        e.preventDefault();
+    }
+});
+
 elements.autoTimerInput.addEventListener('change', (e) => {
+    let val = parseInt(e.target.value) || 0;
+    // Clamp: round to nearest 10, min 0 max 60
+    val = Math.round(val / 10) * 10;
+    if (val <= 0) {
+        e.target.value = '';
+        val = 0;
+    } else {
+        if (val > 60) val = 60;
+        e.target.value = val;
+    }
     if (!currentRoomId || isOfflineMode) return;
-    const autoTimer = parseInt(e.target.value) || 0;
-    if (db.setAutoTimer) db.setAutoTimer(currentRoomId, autoTimer);
+    if (db.setAutoTimer) db.setAutoTimer(currentRoomId, val);
 });
 
 // Timer buttons removed
