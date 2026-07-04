@@ -59,7 +59,7 @@ export function setAutoTimer(roomId, durationSec) {
 
 export function setStoryId(roomId, storyId) {
     return update(ref(db, `rooms/${roomId}/state`), {
-        storyId: storyId || null
+        storyId: storyId || ''
     });
 }
 
