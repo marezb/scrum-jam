@@ -1,7 +1,7 @@
-import { generateId, verifyPassword, POKER_CARDS, FIB_COLORS, firebaseConfig } from './config.js?v=25';
-import { elements, screens, showScreen, renderDeck, updateDeckSelection, renderPlayers } from './ui.js?v=25';
-import { calculateAverage, getClosestFibonacci, checkAutoRevealCondition } from './game-logic.js?v=25';
-import * as db from './firebase-service.js?v=25';
+import { generateId, verifyPassword, POKER_CARDS, FIB_COLORS, firebaseConfig } from './config.js?v=26';
+import { elements, screens, showScreen, renderDeck, updateDeckSelection, renderPlayers } from './ui.js?v=26';
+import { calculateAverage, getClosestFibonacci, checkAutoRevealCondition } from './game-logic.js?v=26';
+import * as db from './firebase-service.js?v=26';
 
 function spawnRestingConfetti() {
     const colors = ['#26ccff', '#a25afd', '#ff5e7e', '#88ff5a', '#fcff42', '#ffa62d', '#ff36ff'];
@@ -338,6 +338,8 @@ elements.revealBtn.addEventListener('click', () => {
             db.addRoundHistory(currentRoomId, getClosestFibonacci(res.average), collectVotes(), storyId);
         }
         db.updateRevealedState(currentRoomId, true, currentName);
+        // Clear storyId in Firebase for future state syncs
+        if (db.setStoryId) db.setStoryId(currentRoomId, '');
     }
 });
 
@@ -470,6 +472,8 @@ function joinRoomOnline(roomId, roomName = null) {
                     }
                 }
                 db.updateRevealedState(currentRoomId, true, "System (Auto)");
+                // Clear storyId in Firebase (only first player to avoid race)
+                if (activeIds[0] === currentPlayerId && db.setStoryId) db.setStoryId(currentRoomId, '');
             }
         },
         onStateChange: (state) => {
@@ -500,8 +504,8 @@ function joinRoomOnline(roomId, roomName = null) {
                 elements.autoTimerInput.value = state.autoTimer === 0 ? '' : state.autoTimer;
             }
 
-            // Sync storyId from other players
-            if (state.storyId !== undefined && document.activeElement !== elements.storyIdInput) {
+            // Sync storyId from other players (skip during reveal - already cleared locally)
+            if (!animate && state.storyId !== undefined && document.activeElement !== elements.storyIdInput) {
                 elements.storyIdInput.value = state.storyId || '';
             }
 
@@ -530,6 +534,8 @@ function joinRoomOnline(roomId, roomName = null) {
                                     db.addRoundHistory(currentRoomId, getClosestFibonacci(res.average), collectVotes(), storyId);
                                 }
                                 db.updateRevealedState(currentRoomId, true, "System (Time Out)");
+                                // Clear storyId in Firebase for future state syncs
+                                if (db.setStoryId) db.setStoryId(currentRoomId, '');
                             }
                         }
                     }
