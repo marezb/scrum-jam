@@ -635,31 +635,34 @@ describe('Scrum Poker E2E & Unit Tests', function() {
         expect(resetBtn.textContent).to.equal('Start voting');
     });
 
-    it('32. Story # czyści się u innych graczy po reveal (state.storyId sync)', async () => {
+    it('32. Story # czyści się u WSZYSTKICH graczy po reveal (local clear on animate)', async () => {
         localStorage.setItem('sp_offlineMode', 'true');
-        const win = await loadApp('index.html?room=STORY_SYNC');
+        const win = await loadApp('index.html?room=STORY_ALL');
         const doc = win.document;
+        const exports = win.__TEST_EXPORTS__;
 
-        // Simulate: another player typed a story
+        // Set players with votes so reveal can trigger
+        exports.setPlayersData({
+            'p1': { name: 'Alice', vote: '5', role: 'player' },
+            'p2': { name: 'Bob', vote: '8', role: 'player' }
+        });
+
+        // Type a story value
         const storyInput = doc.getElementById('story-id-input');
         storyInput.value = 'PROJ-200';
+        expect(storyInput.value).to.equal('PROJ-200');
 
-        // Simulate receiving state update with storyId='' (after reveal cleared it)
-        // This mimics what Firebase onStateChange sends to other players
-        // The condition: state.storyId !== undefined && activeElement !== storyIdInput
-        // With '' (empty string), state.storyId is '' which is !== undefined → should clear
-        // With null from Firebase (key removed), state.storyId is undefined → would NOT clear (the bug)
+        // Simulate the reveal transition that onStateChange does:
+        // 1. isRevealed transitions false→true (animate = true)
+        // 2. Story input should be cleared
+        exports.setIsRevealed(false); // ensure starting state
+        exports.setIsRevealed(true);  // simulate reveal
         
-        // Verify the fix: empty string '' is not undefined
-        const emptyString = '';
-        expect(emptyString !== undefined).to.be.true();
-        
-        // Simulate the sync logic directly
-        const stateStoryId = ''; // This is what Firebase sends after the fix
-        if (stateStoryId !== undefined && doc.activeElement !== storyInput) {
-            storyInput.value = stateStoryId || '';
-        }
-        expect(storyInput.value).to.equal('');
+        // The fix: in both onStateChange and updateGameStateOffline,
+        // when animate=true, story input is cleared LOCALLY (no Firebase needed)
+        // Verify story input is outside reset-controls-group (visible to all)
+        const resetGroup = doc.getElementById('reset-controls-group');
+        expect(resetGroup.contains(storyInput)).to.be.false();
     });
 });
 

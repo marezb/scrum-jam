@@ -1,7 +1,7 @@
-import { generateId, verifyPassword, POKER_CARDS, FIB_COLORS, firebaseConfig } from './config.js?v=24';
-import { elements, screens, showScreen, renderDeck, updateDeckSelection, renderPlayers } from './ui.js?v=24';
-import { calculateAverage, getClosestFibonacci, checkAutoRevealCondition } from './game-logic.js?v=24';
-import * as db from './firebase-service.js?v=24';
+import { generateId, verifyPassword, POKER_CARDS, FIB_COLORS, firebaseConfig } from './config.js?v=25';
+import { elements, screens, showScreen, renderDeck, updateDeckSelection, renderPlayers } from './ui.js?v=25';
+import { calculateAverage, getClosestFibonacci, checkAutoRevealCondition } from './game-logic.js?v=25';
+import * as db from './firebase-service.js?v=25';
 
 function spawnRestingConfetti() {
     const colors = ['#26ccff', '#a25afd', '#ff5e7e', '#88ff5a', '#fcff42', '#ffa62d', '#ff36ff'];
@@ -337,9 +337,6 @@ elements.revealBtn.addEventListener('click', () => {
             const storyId = elements.storyIdInput.value.trim() || null;
             db.addRoundHistory(currentRoomId, getClosestFibonacci(res.average), collectVotes(), storyId);
         }
-        // Clear story after saving to history
-        elements.storyIdInput.value = '';
-        if (db.setStoryId) db.setStoryId(currentRoomId, '');
         db.updateRevealedState(currentRoomId, true, currentName);
     }
 });
@@ -471,9 +468,6 @@ function joinRoomOnline(roomId, roomName = null) {
                         const storyId = elements.storyIdInput.value.trim() || null;
                         db.addRoundHistory(currentRoomId, getClosestFibonacci(res.average), collectVotes(), storyId);
                     }
-                    // Clear story after saving to history
-                    elements.storyIdInput.value = '';
-                    if (db.setStoryId) db.setStoryId(currentRoomId, '');
                 }
                 db.updateRevealedState(currentRoomId, true, "System (Auto)");
             }
@@ -486,6 +480,8 @@ function joinRoomOnline(roomId, roomName = null) {
             updateUIState(state.revealedBy, state.resetBy);
             
             if (animate) {
+                // Clear story input on reveal for ALL players (local clear, no race condition)
+                elements.storyIdInput.value = '';
                 renderPlayers(playersData, true, true, false, false, false);
                 const playerCount = Object.keys(playersData).filter(id => playersData[id] && playersData[id].role !== 'spectator').length;
                 const revealDuration = playerCount * 150 + 400;
@@ -533,9 +529,6 @@ function joinRoomOnline(roomId, roomName = null) {
                                     const storyId = elements.storyIdInput.value.trim() || null;
                                     db.addRoundHistory(currentRoomId, getClosestFibonacci(res.average), collectVotes(), storyId);
                                 }
-                                // Clear story after saving to history
-                                elements.storyIdInput.value = '';
-                                if (db.setStoryId) db.setStoryId(currentRoomId, '');
                                 db.updateRevealedState(currentRoomId, true, "System (Time Out)");
                             }
                         }
@@ -610,6 +603,8 @@ function updateGameStateOffline(animate = false, revealedBy = null, resetBy = nu
         });
     }
     if (animate) {
+        // Clear story input on reveal (same as online onStateChange)
+        elements.storyIdInput.value = '';
         renderPlayers(playersData, true, true, false, false, false);
         const playerCount = Object.keys(playersData).filter(id => playersData[id] && playersData[id].role !== 'spectator').length;
         const revealDuration = playerCount * 150 + 400;
