@@ -28,15 +28,23 @@ export function getRoomMetadata(roomId) {
     return get(ref(db, `rooms/${roomId}/metadata`));
 }
 
-export function setTimer(roomId, durationSec) {
+export function setTimer(roomId, durationSec, startedBy) {
     return update(ref(db, `rooms/${roomId}/state`), {
-        timerEndsAt: Date.now() + durationSec * 1000
+        timerEndsAt: Date.now() + durationSec * 1000,
+        timerStartedBy: startedBy
     });
 }
 
 export function clearTimer(roomId) {
     return update(ref(db, `rooms/${roomId}/state`), {
-        timerEndsAt: null
+        timerEndsAt: null,
+        timerStartedBy: null
+    });
+}
+
+export function setAutoTimer(roomId, durationSec) {
+    return update(ref(db, `rooms/${roomId}/state`), {
+        autoTimer: durationSec
     });
 }
 
@@ -138,7 +146,8 @@ export async function fetchActiveRooms(callback) {
                     if (data.metadata && data.metadata.status === 'active') {
                         active.push({
                             id: id,
-                            lastActive: data.metadata.lastActive || data.metadata.createdAt || null
+                            lastActive: data.metadata.lastActive || data.metadata.createdAt || null,
+                            createdBy: data.metadata.createdBy || 'Unknown'
                         });
                     }
                 }
@@ -156,7 +165,8 @@ export async function fetchActiveRooms(callback) {
                         if (snapshot.exists() && snapshot.val().status === 'active') {
                             active.push({
                                 id: roomId,
-                                lastActive: snapshot.val().lastActive || snapshot.val().createdAt || null
+                                lastActive: snapshot.val().lastActive || snapshot.val().createdAt || null,
+                                createdBy: snapshot.val().createdBy || 'Unknown'
                             });
                         }
                     } catch (err) {

@@ -72,7 +72,7 @@ function init() {
                     if (snapshot.exists()) {
                         const meta = snapshot.val();
                         if (meta.createdBy) {
-                            elements.roomCreatorInfo.innerText = `Pokój założony przez: ${meta.createdBy}`;
+                            elements.roomCreatorInfo.innerText = `Room created by: ${meta.createdBy}`;
                             elements.roomCreatorInfo.classList.remove('hidden');
                         }
                     }
@@ -194,7 +194,7 @@ function renderActiveRooms(activeRooms) {
         li.innerHTML = `
             <div style="display: flex; flex-direction: column; gap: 4px;">
                 <span>Room: ${roomId}</span>
-                <span style="font-size: 0.75rem; color: var(--text-muted);">Last active: ${lastActiveText}</span>
+                <span style="font-size: 0.75rem; color: var(--text-muted);">Created by: ${room.createdBy} | Last active: ${lastActiveText}</span>
             </div>
             <div class="room-actions">
                 <button class="btn icon-btn copy-btn" data-room="${roomId}" title="Copy Link">Copy Link</button>
@@ -263,17 +263,22 @@ elements.resetBtn.addEventListener('click', () => {
         updateGameStateOffline(false, null, currentName, true);
     } else {
         db.clearAllVotes(currentRoomId, playersData, currentName);
-        if (db.clearTimer) db.clearTimer(currentRoomId);
+        const autoTimer = parseInt(elements.autoTimerInput.value) || 0;
+        if (autoTimer > 0) {
+            if (db.setTimer) db.setTimer(currentRoomId, autoTimer, currentName);
+        } else {
+            if (db.clearTimer) db.clearTimer(currentRoomId);
+        }
     }
 });
 
-document.querySelectorAll('.timer-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-        if (!currentRoomId || isOfflineMode || isRevealed) return;
-        const sec = parseInt(e.target.dataset.sec);
-        if (db.setTimer) db.setTimer(currentRoomId, sec);
-    });
+elements.autoTimerInput.addEventListener('change', (e) => {
+    if (!currentRoomId || isOfflineMode) return;
+    const autoTimer = parseInt(e.target.value) || 0;
+    if (db.setAutoTimer) db.setAutoTimer(currentRoomId, autoTimer);
 });
+
+// Timer buttons removed
 
 elements.closeRoomBtn.addEventListener('click', () => {
     if (!currentRoomId || isOfflineMode) return;
@@ -346,9 +351,20 @@ function joinRoomOnline(roomId) {
             updateUIState(state.revealedBy, state.resetBy);
             renderPlayers(playersData, isRevealed, animate, resetAnim);
 
+            if (state.autoTimer !== undefined && document.activeElement !== elements.autoTimerInput) {
+                elements.autoTimerInput.value = state.autoTimer === 0 ? '' : state.autoTimer;
+            }
+
             clearInterval(timerInterval);
             if (state.timerEndsAt && !isRevealed) {
                 elements.timerDisplay.classList.remove('hidden');
+                elements.resetControlsGroup.classList.add('hidden');
+
+                if (state.timerStartedBy) {
+                    elements.revealedByInfo.innerText = `${state.timerStartedBy} started countdown`;
+                    elements.revealedByInfo.classList.remove('hidden');
+                }
+
                 timerInterval = setInterval(() => {
                     const remaining = Math.max(0, Math.ceil((state.timerEndsAt - Date.now()) / 1000));
                     elements.timerDisplay.innerText = `${remaining}s`;
@@ -370,6 +386,9 @@ function joinRoomOnline(roomId) {
             } else {
                 elements.timerDisplay.classList.add('hidden');
                 elements.timerDisplay.innerText = '';
+                if (isRevealed) {
+                    elements.resetControlsGroup.classList.remove('hidden');
+                }
             }
         },
         onRoomClosed: () => {
@@ -438,7 +457,7 @@ function updateGameStateOffline(animate = false, revealedBy = null, resetBy = nu
 function updateUIState(revealedBy = null, resetBy = null) {
     if (isRevealed) {
         elements.revealBtn.classList.add('hidden');
-        elements.resetBtn.classList.remove('hidden');
+        elements.resetControlsGroup.classList.remove('hidden');
         
         elements.resultsArea.classList.remove('fade-out');
         elements.statsPanel.classList.remove('fade-out');
@@ -455,7 +474,7 @@ function updateUIState(revealedBy = null, resetBy = null) {
         handleCalculateResults();
     } else {
         elements.revealBtn.classList.remove('hidden');
-        elements.resetBtn.classList.add('hidden');
+        elements.resetControlsGroup.classList.add('hidden');
         
         elements.resultsArea.classList.add('fade-out');
         elements.statsPanel.classList.add('fade-out');
