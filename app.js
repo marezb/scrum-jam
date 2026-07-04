@@ -1,7 +1,7 @@
-import { generateId, verifyPassword, POKER_CARDS, FIB_COLORS, firebaseConfig } from './config.js?v=22';
-import { elements, screens, showScreen, renderDeck, updateDeckSelection, renderPlayers } from './ui.js?v=22';
-import { calculateAverage, getClosestFibonacci, checkAutoRevealCondition } from './game-logic.js?v=22';
-import * as db from './firebase-service.js?v=22';
+import { generateId, verifyPassword, POKER_CARDS, FIB_COLORS, firebaseConfig } from './config.js?v=23';
+import { elements, screens, showScreen, renderDeck, updateDeckSelection, renderPlayers } from './ui.js?v=23';
+import { calculateAverage, getClosestFibonacci, checkAutoRevealCondition } from './game-logic.js?v=23';
+import * as db from './firebase-service.js?v=23';
 
 function spawnRestingConfetti() {
     const colors = ['#26ccff', '#a25afd', '#ff5e7e', '#88ff5a', '#fcff42', '#ffa62d', '#ff36ff'];
@@ -357,6 +357,7 @@ elements.resetBtn.addEventListener('click', () => {
         }
     }
     elements.storyIdInput.value = '';
+    if (!isOfflineMode && db.setStoryId) db.setStoryId(currentRoomId, '');
 });
 
 // Timer: only allow spinner arrows, no keyboard typing
@@ -364,6 +365,15 @@ elements.autoTimerInput.addEventListener('keydown', (e) => {
     // Allow ArrowUp, ArrowDown, Tab only
     if (!['ArrowUp', 'ArrowDown', 'Tab'].includes(e.key)) {
         e.preventDefault();
+    }
+});
+
+// Prevent text selection on click — just show value, no cursor
+elements.autoTimerInput.addEventListener('focus', () => {
+    // Deselect any text selection
+    const el = elements.autoTimerInput;
+    if (el.setSelectionRange) {
+        try { el.setSelectionRange(el.value.length, el.value.length); } catch(e) {}
     }
 });
 
@@ -383,6 +393,13 @@ elements.autoTimerInput.addEventListener('change', (e) => {
 });
 
 // Timer buttons removed
+
+// Story ID sync: broadcast to all players on blur (leaving the field)
+elements.storyIdInput.addEventListener('blur', () => {
+    if (!currentRoomId || isOfflineMode) return;
+    const storyId = elements.storyIdInput.value.trim();
+    if (db.setStoryId) db.setStoryId(currentRoomId, storyId);
+});
 
 elements.closeRoomBtn.addEventListener('click', () => {
     if (!currentRoomId || isOfflineMode) return;
@@ -481,6 +498,11 @@ function joinRoomOnline(roomId, roomName = null) {
 
             if (state.autoTimer !== undefined && document.activeElement !== elements.autoTimerInput) {
                 elements.autoTimerInput.value = state.autoTimer === 0 ? '' : state.autoTimer;
+            }
+
+            // Sync storyId from other players
+            if (state.storyId !== undefined && document.activeElement !== elements.storyIdInput) {
+                elements.storyIdInput.value = state.storyId || '';
             }
 
             clearInterval(timerInterval);

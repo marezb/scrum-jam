@@ -57,6 +57,12 @@ export function setAutoTimer(roomId, durationSec) {
     });
 }
 
+export function setStoryId(roomId, storyId) {
+    return update(ref(db, `rooms/${roomId}/state`), {
+        storyId: storyId || null
+    });
+}
+
 export function closeRoom(roomId) {
     console.warn("Completely deleting room from database:", roomId);
     // Remove all children and then the parent node itself
