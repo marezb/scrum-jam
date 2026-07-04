@@ -25,6 +25,7 @@
             <p class="subtitle">Estimate tasks with your team in real-time.</p>
             
             <form id="join-form">
+                <div id="room-creator-info" class="hidden" style="margin-bottom: 15px; font-size: 0.95rem; color: var(--text-muted); text-align: center; font-weight: 500;"></div>
                 <div class="input-group" id="name-group">
                     <label for="player-name">Your name</label>
                     <input type="text" id="player-name" placeholder="e.g. John Doe" required>
@@ -36,6 +37,9 @@
                 <div class="input-group" id="password-group">
                     <label for="room-password">Admin Password</label>
                     <input type="password" id="room-password">
+                </div>
+                <div id="join-as-admin-group" class="hidden" style="text-align: center; margin-bottom: 15px;">
+                    <button type="button" id="show-admin-login-btn" class="btn" style="background: transparent; border: none; color: var(--accent); font-size: 0.85rem; padding: 0; text-decoration: underline; cursor: pointer;">Join as Admin</button>
                 </div>
                 <div class="input-group checkbox-group hidden" id="spectator-group">
                     <label class="checkbox-label">
@@ -82,10 +86,16 @@
             
             <div class="controls-area controls-area-bottom">
                 <button id="reveal-btn" class="btn primary-btn">Reveal cards</button>
+                <div id="timer-controls" class="timer-controls" style="display: flex; gap: 5px; margin-left: 10px;">
+                    <button class="btn secondary-btn timer-btn" data-sec="10">10s</button>
+                    <button class="btn secondary-btn timer-btn" data-sec="20">20s</button>
+                    <button class="btn secondary-btn timer-btn" data-sec="30">30s</button>
+                </div>
                 <button id="reset-btn" class="btn secondary-btn hidden">New round</button>
             </div>
 
             <div class="board-center">
+                <div id="timer-display" class="hidden" style="font-size: 2.5rem; font-weight: bold; color: var(--accent); margin-bottom: 15px; text-align: center;"></div>
                 <div id="revealed-by-info" class="hidden" style="margin-bottom: 15px; font-size: 0.9rem; color: var(--text-muted); text-align: center;"></div>
                 <div id="results-area" class="results-area hidden">
                     <h3>Result: <span id="average-score">-</span></h3>

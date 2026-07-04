@@ -15,11 +15,28 @@ export function initFirebase(config) {
     }
 }
 
-export function createRoom(roomId) {
+export function createRoom(roomId, creatorName = 'Unknown') {
     return set(ref(db, `rooms/${roomId}/metadata`), {
         status: 'active',
         createdAt: Date.now(),
-        lastActive: Date.now()
+        lastActive: Date.now(),
+        createdBy: creatorName
+    });
+}
+
+export function getRoomMetadata(roomId) {
+    return get(ref(db, `rooms/${roomId}/metadata`));
+}
+
+export function setTimer(roomId, durationSec) {
+    return update(ref(db, `rooms/${roomId}/state`), {
+        timerEndsAt: Date.now() + durationSec * 1000
+    });
+}
+
+export function clearTimer(roomId) {
+    return update(ref(db, `rooms/${roomId}/state`), {
+        timerEndsAt: null
     });
 }
 
