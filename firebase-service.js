@@ -15,12 +15,21 @@ export function initFirebase(config) {
     }
 }
 
-export function createRoom(roomId, creatorName = 'Unknown') {
-    return set(ref(db, `rooms/${roomId}/metadata`), {
-        status: 'active',
-        createdAt: Date.now(),
-        lastActive: Date.now(),
-        createdBy: creatorName
+export function createRoom(roomId, creatorName, roomName = null) {
+    return set(ref(db, 'rooms/' + roomId), {
+        metadata: {
+            status: 'active',
+            createdAt: Date.now(),
+            lastActive: Date.now(),
+            createdBy: creatorName,
+            roomName: roomName
+        }
+    });
+}
+
+export function updateRoomName(roomId, newName) {
+    return update(ref(db, `rooms/${roomId}/metadata`), {
+        roomName: newName
     });
 }
 
@@ -147,7 +156,8 @@ export async function fetchActiveRooms(callback) {
                         active.push({
                             id: id,
                             lastActive: data.metadata.lastActive || data.metadata.createdAt || null,
-                            createdBy: data.metadata.createdBy || 'Unknown'
+                            createdBy: data.metadata.createdBy || 'Unknown',
+                            roomName: data.metadata.roomName || null
                         });
                     }
                 }
@@ -166,7 +176,8 @@ export async function fetchActiveRooms(callback) {
                             active.push({
                                 id: roomId,
                                 lastActive: snapshot.val().lastActive || snapshot.val().createdAt || null,
-                                createdBy: snapshot.val().createdBy || 'Unknown'
+                                createdBy: snapshot.val().createdBy || 'Unknown',
+                                roomName: snapshot.val().roomName || null
                             });
                         }
                     } catch (err) {

@@ -5,6 +5,8 @@ export const elements = {
     joinForm: document.getElementById('join-form'),
     playerNameInput: document.getElementById('player-name'),
     roomIdInput: document.getElementById('room-id'),
+    roomNameGroup: document.getElementById('room-name-group'),
+    roomNameInput: document.getElementById('room-name'),
     passwordInput: document.getElementById('room-password'),
     spectatorModeInput: document.getElementById('spectator-mode'),
     passwordGroup: document.getElementById('password-group'),
@@ -20,6 +22,7 @@ export const elements = {
 
     // Game Screen
     displayRoomId: document.getElementById('display-room-id'),
+    editRoomNameBtn: document.getElementById('edit-room-name-btn'),
     copyLinkBtn: document.getElementById('copy-link-btn'),
     cardsContainer: document.getElementById('cards-container'),
     playersContainer: document.getElementById('players-container'),

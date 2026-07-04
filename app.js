@@ -62,15 +62,20 @@ function init() {
         if (urlRoom) {
             elements.roomIdInput.value = urlRoom;
             elements.passwordGroup.classList.add('hidden');
+            elements.roomIdGroup.classList.remove('hidden');
+            elements.roomIdInput.value = urlRoom;
+            elements.roomNameGroup.classList.add('hidden');
             elements.joinAsAdminGroup.classList.remove('hidden');
             elements.spectatorGroup.classList.remove('hidden');
-            elements.roomIdGroup.classList.remove('hidden');
             elements.joinBtn.innerText = "Join Game";
 
             if (!isOfflineMode && db.getRoomMetadata) {
                 db.getRoomMetadata(urlRoom).then(snapshot => {
                     if (snapshot.exists()) {
                         const meta = snapshot.val();
+                        if (meta.roomName) {
+                            elements.displayRoomId.innerText = meta.roomName;
+                        }
                         if (meta.createdBy) {
                             elements.roomCreatorInfo.innerText = `Room created by: ${meta.createdBy}`;
                             elements.roomCreatorInfo.classList.remove('hidden');
@@ -133,8 +138,9 @@ elements.joinForm.addEventListener('submit', async (e) => {
             if (db && db.fetchActiveRooms) db.fetchActiveRooms(renderActiveRooms);
 
             currentName = elements.playerNameInput.value.trim();
+            const roomName = elements.roomNameInput.value.trim();
             if (!isOfflineMode) {
-                await db.createRoom(room, currentName);
+                await db.createRoom(room, currentName, roomName);
                 localStorage.setItem(`sp_admin_${room}`, "true");
             }
         } else {
@@ -158,7 +164,8 @@ elements.joinForm.addEventListener('submit', async (e) => {
         if (isOfflineMode) {
             joinRoomOffline(room);
         } else {
-            joinRoomOnline(room);
+            const roomName = elements.roomNameInput.value.trim();
+            joinRoomOnline(room, roomName);
         }
     } catch (err) {
         console.error("Failed to create/join room:", err);
@@ -189,12 +196,13 @@ function renderActiveRooms(activeRooms) {
     activeRooms.forEach(room => {
         const roomId = typeof room === 'string' ? room : room.id;
         const lastActiveText = room.lastActive ? formatTimeAgo(room.lastActive) : 'Unknown';
+        const displayName = room.roomName ? room.roomName : roomId;
         
         const li = document.createElement('li');
         li.innerHTML = `
             <div style="display: flex; flex-direction: column; gap: 4px;">
-                <span>Room: ${roomId}</span>
-                <span style="font-size: 0.75rem; color: var(--text-muted);">Created by: ${room.createdBy} | Last active: ${lastActiveText}</span>
+                <span style="font-weight: 600;">${displayName}</span>
+                <span style="font-size: 0.75rem; color: var(--text-muted);">ID: ${roomId} | Created by: ${room.createdBy} | Last active: ${lastActiveText}</span>
             </div>
             <div class="room-actions">
                 <button class="btn icon-btn copy-btn" data-room="${roomId}" title="Copy Link">Copy Link</button>
@@ -225,6 +233,23 @@ function renderActiveRooms(activeRooms) {
         });
     });
 }
+
+elements.editRoomNameBtn.addEventListener('click', () => {
+    if (!currentRoomId || isOfflineMode) return;
+    const currentName = elements.displayRoomId.innerText === currentRoomId ? "" : elements.displayRoomId.innerText;
+    const newName = prompt("Enter new room name:", currentName);
+    
+    if (newName !== null) {
+        const trimmedName = newName.trim();
+        if (db.updateRoomName) {
+            db.updateRoomName(currentRoomId, trimmedName).then(() => {
+                elements.displayRoomId.innerText = trimmedName || currentRoomId;
+            }).catch(err => {
+                alert("Failed to update room name: " + err.message);
+            });
+        }
+    }
+});
 
 // === Game Actions ===
 elements.copyLinkBtn.addEventListener('click', () => {
@@ -288,16 +313,24 @@ elements.closeRoomBtn.addEventListener('click', () => {
 });
 
 // === Join Room Logic ===
-function joinRoomOnline(roomId) {
+function joinRoomOnline(roomId, roomName = null) {
     currentRoomId = roomId;
-    elements.displayRoomId.innerText = roomId;
+    if (roomName) {
+        elements.displayRoomId.innerText = roomName;
+    } else if (!elements.displayRoomId.innerText) {
+        elements.displayRoomId.innerText = roomId;
+    }
 
     if (localStorage.getItem(`sp_admin_${roomId}`) === "true") {
         elements.closeRoomBtn.classList.remove('hidden');
         elements.clearHistoryBtn.classList.remove('hidden');
+        if (!isOfflineMode) {
+            elements.editRoomNameBtn.classList.remove('hidden');
+        }
     } else {
         elements.closeRoomBtn.classList.add('hidden');
         elements.clearHistoryBtn.classList.add('hidden');
+        elements.editRoomNameBtn.classList.add('hidden');
     }
 
     const url = new URL(window.location.href);

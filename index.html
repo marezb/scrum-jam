@@ -34,6 +34,10 @@
                     <label for="room-id">Room ID</label>
                     <input type="text" id="room-id" disabled>
                 </div>
+                <div class="input-group" id="room-name-group">
+                    <label for="room-name">Room name (optional)</label>
+                    <input type="text" id="room-name" placeholder="e.g. Sprint 42 Planning">
+                </div>
                 <div class="input-group" id="password-group">
                     <label for="room-password">Admin Password</label>
                     <input type="password" id="room-password">
@@ -67,7 +71,11 @@
             </div>
             <div class="room-info">
                 <button id="close-room-btn" class="btn hidden" style="border: 1px solid #ef4444; color: #ef4444; background: transparent; padding: 6px 12px; font-size: 0.85rem;">Close Room</button>
-                <span>Room: <strong id="display-room-id">...</strong></span>
+                <span>Room: <strong id="display-room-id">...</strong>
+                    <button id="edit-room-name-btn" class="hidden" style="background: none; border: none; cursor: pointer; color: var(--text-muted); padding: 0 5px;" title="Edit Room Name">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                    </button>
+                </span>
                 <button id="copy-link-btn" class="btn icon-btn" title="Copy room link">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
                 </button>
@@ -86,13 +94,13 @@
             
             <div class="controls-area controls-area-bottom">
                 <button id="reveal-btn" class="btn primary-btn">Reveal cards</button>
-                <div id="reset-controls-group" class="hidden" style="display: flex; align-items: center; gap: 10px;">
-                    <div style="display: flex; align-items: center; gap: 5px;">
-                        <label for="auto-timer-input" style="font-size: 0.85rem; color: var(--text-muted); font-weight: 500;">counter:</label>
-                        <input type="number" id="auto-timer-input" min="0" placeholder="0" style="width: 50px; padding: 6px; border-radius: 6px; border: 1px solid var(--panel-border); background: var(--bg-dark); color: var(--text-light); text-align: center; font-size: 0.9rem;">
-                        <span style="font-size: 0.85rem; color: var(--text-muted);">s</span>
+                <div id="reset-controls-group" class="hidden" style="display: flex; align-items: center; gap: 15px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <label for="auto-timer-input" style="font-size: 1rem; color: var(--text-muted); font-weight: 600;">Timer:</label>
+                        <input type="number" id="auto-timer-input" min="0" step="5" placeholder="0" style="width: 75px; height: 42px; padding: 6px 8px; border-radius: 6px; border: 1px solid var(--panel-border); background: var(--bg-dark); color: var(--text-light); text-align: center; font-size: 1.1rem; color-scheme: dark;">
+                        <span style="font-size: 1rem; color: var(--text-muted); font-weight: 500;">s</span>
                     </div>
-                    <button id="reset-btn" class="btn secondary-btn">New round</button>
+                    <button id="reset-btn" class="btn secondary-btn" style="height: 42px; font-size: 1.1rem; padding: 0 20px;">New round</button>
                 </div>
             </div>
 
