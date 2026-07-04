@@ -131,13 +131,16 @@ export function clearAllVotes(roomId, playersData, resetByName = null) {
     return update(ref(db), updates);
 }
 
-export function addRoundHistory(roomId, score) {
+export function addRoundHistory(roomId, score, votes = null, storyId = null) {
     update(ref(db, `rooms/${roomId}/metadata`), { lastActive: Date.now() });
-    return push(ref(db, `rooms/${roomId}/history`), {
+    const entry = {
         type: 'round',
         score: score,
         timestamp: Date.now()
-    });
+    };
+    if (votes) entry.votes = votes;
+    if (storyId) entry.storyId = storyId;
+    return push(ref(db, `rooms/${roomId}/history`), entry);
 }
 export function clearRoundHistory(roomId) {
     update(ref(db, `rooms/${roomId}/metadata`), { lastActive: Date.now() });

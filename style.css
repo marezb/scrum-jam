@@ -354,42 +354,137 @@ input[type="text"]:focus, input[type="password"]:focus, textarea:focus {
 .history-panel {
     position: absolute;
     right: 20px;
-    top: 20px;
+    top: 220px;
     background: var(--panel-bg);
     padding: 15px 20px;
     border-radius: 16px;
     border: 1px solid var(--panel-border);
     backdrop-filter: blur(10px);
-    min-width: 200px;
+    min-width: 220px;
+    max-width: 280px;
     display: flex;
     flex-direction: column;
     gap: 10px;
     z-index: 20;
+}
+.history-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 .history-panel h4 {
     font-size: 0.85rem;
     color: var(--text-muted);
     text-transform: uppercase;
     letter-spacing: 1px;
+    margin: 0;
+}
+.history-toggle-all {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-muted);
+    padding: 2px;
+    transition: color 0.2s, transform 0.3s;
+    display: flex;
+    align-items: center;
+}
+.history-toggle-all:hover {
+    color: var(--accent);
+}
+.history-toggle-all.expanded {
+    transform: rotate(180deg);
 }
 .history-panel ul {
     list-style: none;
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    max-height: 300px;
+    gap: 4px;
+    max-height: 400px;
     overflow-y: auto;
-    padding-right: 12px;
+    padding-right: 6px;
 }
-.history-panel li {
-    font-size: 0.95rem;
-    color: var(--text-main);
+.history-round {
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+.history-round-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 8px;
-    padding-bottom: 4px;
-    border-bottom: 1px solid rgba(255,255,255,0.05);
+    gap: 6px;
+    padding: 6px 0;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s;
+    border-radius: 6px;
+}
+.history-round-header:hover {
+    background: rgba(255,255,255,0.03);
+}
+.history-round-label {
+    font-size: 0.85rem;
+    color: var(--text-main);
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.history-round-label .story-tag {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    margin-left: 4px;
+}
+.history-round-right {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+.history-round-chevron {
+    color: var(--text-muted);
+    transition: transform 0.25s ease;
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+.history-round.expanded .history-round-chevron {
+    transform: rotate(90deg);
+}
+.history-round-details {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease, padding 0.3s ease;
+    padding: 0 0 0 4px;
+}
+.history-round.expanded .history-round-details {
+    max-height: 500px;
+    padding: 4px 0 8px 4px;
+}
+.history-vote-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 2px 0;
+    font-size: 0.8rem;
+}
+.history-vote-name {
+    color: var(--text-muted);
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.history-vote-badge {
+    padding: 1px 8px;
+    border-radius: 10px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    min-width: 28px;
+    text-align: center;
+    flex-shrink: 0;
+}
+#close-room-btn:hover {
+    color: #ef4444 !important;
 }
 
 .controls-area-bottom {

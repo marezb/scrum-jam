@@ -1,7 +1,7 @@
-import { generateId, verifyPassword, POKER_CARDS, FIB_COLORS, firebaseConfig } from './config.js?v=20';
-import { elements, screens, showScreen, renderDeck, updateDeckSelection, renderPlayers } from './ui.js?v=20';
-import { calculateAverage, getClosestFibonacci, checkAutoRevealCondition } from './game-logic.js?v=20';
-import * as db from './firebase-service.js?v=20';
+import { generateId, verifyPassword, POKER_CARDS, FIB_COLORS, firebaseConfig } from './config.js?v=21';
+import { elements, screens, showScreen, renderDeck, updateDeckSelection, renderPlayers } from './ui.js?v=21';
+import { calculateAverage, getClosestFibonacci, checkAutoRevealCondition } from './game-logic.js?v=21';
+import * as db from './firebase-service.js?v=21';
 
 function spawnRestingConfetti() {
     const colors = ['#26ccff', '#a25afd', '#ff5e7e', '#88ff5a', '#fcff42', '#ffa62d', '#ff36ff'];
@@ -315,6 +315,17 @@ elements.copyLinkBtn.addEventListener('click', () => {
     });
 });
 
+// Helper: collect votes map from playersData for history storage
+function collectVotes() {
+    const votes = {};
+    Object.values(playersData).forEach(p => {
+        if (p.role !== 'spectator') {
+            votes[p.name || 'Anonymous'] = p.vote || null;
+        }
+    });
+    return votes;
+}
+
 elements.revealBtn.addEventListener('click', () => {
     if (!currentRoomId) return;
     if (isOfflineMode) {
@@ -323,7 +334,8 @@ elements.revealBtn.addEventListener('click', () => {
     } else {
         const res = calculateAverage(playersData);
         if (res) {
-            db.addRoundHistory(currentRoomId, getClosestFibonacci(res.average));
+            const storyId = elements.storyIdInput.value.trim() || null;
+            db.addRoundHistory(currentRoomId, getClosestFibonacci(res.average), collectVotes(), storyId);
         }
         db.updateRevealedState(currentRoomId, true, currentName);
     }
@@ -344,6 +356,7 @@ elements.resetBtn.addEventListener('click', () => {
             if (db.clearTimer) db.clearTimer(currentRoomId);
         }
     }
+    elements.storyIdInput.value = '';
 });
 
 elements.autoTimerInput.addEventListener('change', (e) => {
@@ -387,6 +400,7 @@ function joinRoomOnline(roomId, roomName = null) {
     window.history.pushState({}, '', url);
 
     showScreen('game');
+    document.getElementById('player-greeting').textContent = `Hi ${currentName}!`;
     if (currentRole === 'spectator') {
         elements.deckArea.classList.add('hidden');
     } else {
@@ -419,7 +433,8 @@ function joinRoomOnline(roomId, roomName = null) {
                 if (activeIds[0] === currentPlayerId) {
                     const res = calculateAverage(playersData);
                     if (res) {
-                        db.addRoundHistory(currentRoomId, getClosestFibonacci(res.average));
+                        const storyId = elements.storyIdInput.value.trim() || null;
+                        db.addRoundHistory(currentRoomId, getClosestFibonacci(res.average), collectVotes(), storyId);
                     }
                 }
                 db.updateRevealedState(currentRoomId, true, "System (Auto)");
@@ -472,7 +487,8 @@ function joinRoomOnline(roomId, roomName = null) {
                             if (activeIds[0] === currentPlayerId || (activeIds.length === 0 && localStorage.getItem(`sp_admin_${currentRoomId}`) === "true")) {
                                 const res = calculateAverage(playersData);
                                 if (res) {
-                                    db.addRoundHistory(currentRoomId, getClosestFibonacci(res.average));
+                                    const storyId = elements.storyIdInput.value.trim() || null;
+                                    db.addRoundHistory(currentRoomId, getClosestFibonacci(res.average), collectVotes(), storyId);
                                 }
                                 db.updateRevealedState(currentRoomId, true, "System (Time Out)");
                             }
@@ -501,6 +517,7 @@ function joinRoomOffline(roomId) {
     currentRoomId = roomId;
     elements.displayRoomId.innerText = roomId + " (Offline)";
     showScreen('game');
+    document.getElementById('player-greeting').textContent = `Hi ${currentName || 'there'}!`;
     
     if (currentRole === 'spectator') {
         elements.deckArea.classList.add('hidden');
@@ -614,25 +631,121 @@ function updateUIState(revealedBy = null, resetBy = null) {
 function renderHistory(historyObj) {
     elements.historyList.innerHTML = '';
     const historyEntries = Object.values(historyObj).sort((a, b) => a.timestamp - b.timestamp);
-    if (historyEntries.length > 0) {
+    const roundEntries = historyEntries.filter(e => e.type === 'round');
+
+    if (roundEntries.length > 0) {
         elements.historyPanel.classList.remove('hidden');
         let roundCounter = 1;
-        historyEntries.forEach((entry) => {
-            if (entry.type !== 'round') return; // only render actual round entries
+
+        roundEntries.forEach((entry) => {
             const li = document.createElement('li');
-            let scoreText = entry.score;
-            let bgStyle = '';
-            let textStyle = '';
-            if (FIB_COLORS[entry.score]) {
-                bgStyle = `background-color: ${FIB_COLORS[entry.score].bg};`;
-                textStyle = `color: ${FIB_COLORS[entry.score].text};`;
+            li.className = 'history-round';
+
+            // Header row (always visible)
+            const header = document.createElement('div');
+            header.className = 'history-round-header';
+
+            const label = document.createElement('span');
+            label.className = 'history-round-label';
+            let labelText = `Round ${roundCounter}`;
+            if (entry.storyId) {
+                labelText += ` `;
+                const storySpan = document.createElement('span');
+                storySpan.className = 'story-tag';
+                storySpan.textContent = entry.storyId;
+                label.textContent = labelText;
+                label.appendChild(storySpan);
+            } else {
+                label.textContent = labelText;
             }
-            li.innerHTML = `<span>Round ${roundCounter}</span> <strong style="${bgStyle} ${textStyle} padding: 2px 10px; border-radius: 12px;">${scoreText}</strong>`;
-            roundCounter++;
+
+            const rightSide = document.createElement('div');
+            rightSide.className = 'history-round-right';
+
+            // Score badge
+            const scoreBadge = document.createElement('strong');
+            scoreBadge.className = 'history-vote-badge';
+            scoreBadge.textContent = entry.score;
+            if (FIB_COLORS[entry.score]) {
+                scoreBadge.style.backgroundColor = FIB_COLORS[entry.score].bg;
+                scoreBadge.style.color = FIB_COLORS[entry.score].text;
+            } else {
+                scoreBadge.style.backgroundColor = '#343a40';
+                scoreBadge.style.color = '#fff';
+            }
+            rightSide.appendChild(scoreBadge);
+
+            // Chevron (only if votes data exists)
+            if (entry.votes) {
+                const chevron = document.createElement('span');
+                chevron.className = 'history-round-chevron';
+                chevron.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>';
+                rightSide.appendChild(chevron);
+            }
+
+            header.appendChild(label);
+            header.appendChild(rightSide);
+
+            // Details section (hidden by default)
+            const details = document.createElement('div');
+            details.className = 'history-round-details';
+
+            if (entry.votes) {
+                // Sort voters by vote value (ascending), non-voters and ? at end
+                const voters = Object.entries(entry.votes).map(([name, vote]) => ({ name, vote }));
+                voters.sort((a, b) => {
+                    const valA = a.vote && a.vote !== '?' ? parseFloat(a.vote) : Infinity;
+                    const valB = b.vote && b.vote !== '?' ? parseFloat(b.vote) : Infinity;
+                    return valA - valB;
+                });
+
+                voters.forEach(({ name, vote }) => {
+                    const row = document.createElement('div');
+                    row.className = 'history-vote-row';
+
+                    const nameEl = document.createElement('span');
+                    nameEl.className = 'history-vote-name';
+                    nameEl.textContent = name;
+
+                    const badge = document.createElement('span');
+                    badge.className = 'history-vote-badge';
+
+                    if (!vote) {
+                        badge.textContent = '😴';
+                        badge.style.backgroundColor = 'transparent';
+                    } else if (vote === '?') {
+                        badge.textContent = '?';
+                        badge.style.backgroundColor = '#343a40';
+                        badge.style.color = '#fff';
+                    } else {
+                        badge.textContent = vote;
+                        if (FIB_COLORS[vote]) {
+                            badge.style.backgroundColor = FIB_COLORS[vote].bg;
+                            badge.style.color = FIB_COLORS[vote].text;
+                        } else {
+                            badge.style.backgroundColor = '#343a40';
+                            badge.style.color = '#fff';
+                        }
+                    }
+
+                    row.appendChild(nameEl);
+                    row.appendChild(badge);
+                    details.appendChild(row);
+                });
+
+                // Toggle expand on header click
+                header.addEventListener('click', () => {
+                    li.classList.toggle('expanded');
+                });
+            }
+
+            li.appendChild(header);
+            li.appendChild(details);
             elements.historyList.appendChild(li);
+            roundCounter++;
         });
         currentRoundNumber = roundCounter;
-        
+
         // Auto-scroll to the bottom to always show the newest round
         elements.historyList.scrollTop = elements.historyList.scrollHeight;
     } else {
@@ -640,6 +753,23 @@ function renderHistory(historyObj) {
         currentRoundNumber = 1;
     }
 }
+
+// Expand/collapse all history rounds
+elements.expandAllHistoryBtn.addEventListener('click', () => {
+    const rounds = elements.historyList.querySelectorAll('.history-round');
+    const allExpanded = Array.from(rounds).every(r => r.classList.contains('expanded'));
+    rounds.forEach(r => {
+        // Only toggle rounds that have votes (chevron)
+        if (r.querySelector('.history-round-chevron')) {
+            if (allExpanded) {
+                r.classList.remove('expanded');
+            } else {
+                r.classList.add('expanded');
+            }
+        }
+    });
+    elements.expandAllHistoryBtn.classList.toggle('expanded', !allExpanded);
+});
 
 elements.clearHistoryBtn.addEventListener('click', () => {
     if (!currentRoomId || isOfflineMode) return;
@@ -713,6 +843,7 @@ window.__TEST_EXPORTS__ = {
     formatTimeAgo,
     joinRoomOffline,
     handleCardSelect,
+    collectVotes,
     get playersData() { return playersData; },
     setPlayersData: (data) => { playersData = data; },
     setIsRevealed: (rev) => { isRevealed = rev; },

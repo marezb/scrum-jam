@@ -43,7 +43,9 @@ export const elements = {
     deckArea: document.querySelector('.deck-area'),
     historyPanel: document.getElementById('history-panel'),
     historyList: document.getElementById('history-list'),
-    clearHistoryBtn: document.getElementById('clear-history-btn')
+    clearHistoryBtn: document.getElementById('clear-history-btn'),
+    storyIdInput: document.getElementById('story-id-input'),
+    expandAllHistoryBtn: document.getElementById('expand-all-history-btn')
 };
 
 export const screens = {

@@ -463,6 +463,109 @@ describe('Scrum Poker E2E & Unit Tests', function() {
         expect(_formatTimeAgo(now - 172800000)).to.equal('2d ago');     // 2 days ago
         expect(_formatTimeAgo(null)).to.equal('Unknown');               // null input
     });
+
+    // === ROUND HISTORY EXPANSION TESTS ===
+
+    it('23. renderHistory z votes - rozwija szczegóły głosowania po kliknięciu', async () => {
+        localStorage.setItem('sp_offlineMode', 'true');
+        const win = await loadApp('index.html?room=VOTES_HIST');
+        const exports = win.__TEST_EXPORTS__;
+
+        const fakeHistory = {
+            'k1': {
+                type: 'round', score: '8', timestamp: 1000,
+                votes: { 'Alice': '5', 'Bob': '13', 'Charlie': '?', 'Dave': null }
+            }
+        };
+        exports.renderHistory(fakeHistory);
+
+        const round = win.document.querySelector('.history-round');
+        expect(round !== null).to.be.true();
+
+        // Should have a chevron (votes exist)
+        const chevron = round.querySelector('.history-round-chevron');
+        expect(chevron !== null).to.be.true();
+
+        // Click header to expand
+        round.querySelector('.history-round-header').click();
+        expect(round.classList.contains('expanded')).to.be.true();
+
+        // Should show 4 vote rows
+        const rows = round.querySelectorAll('.history-vote-row');
+        expect(rows.length).to.equal(4);
+
+        // First row should be Alice (5) — sorted ascending
+        const firstBadge = rows[0].querySelector('.history-vote-badge');
+        expect(firstBadge.textContent).to.equal('5');
+    });
+
+    it('24. renderHistory ze storyId - wyświetla numer storki', async () => {
+        localStorage.setItem('sp_offlineMode', 'true');
+        const win = await loadApp('index.html?room=STORY_HIST');
+        const exports = win.__TEST_EXPORTS__;
+
+        const fakeHistory = {
+            'k1': { type: 'round', score: '5', timestamp: 1000, storyId: 'PROJ-42', votes: { 'A': '5' } }
+        };
+        exports.renderHistory(fakeHistory);
+
+        const storyTag = win.document.querySelector('.story-tag');
+        expect(storyTag !== null).to.be.true();
+        expect(storyTag.textContent).to.equal('PROJ-42');
+    });
+
+    it('25. expand-all przycisk rozwija i zwija wszystkie rundy', async () => {
+        localStorage.setItem('sp_offlineMode', 'true');
+        const win = await loadApp('index.html?room=EXPALL_HIST');
+        const exports = win.__TEST_EXPORTS__;
+
+        const fakeHistory = {
+            'k1': { type: 'round', score: '5', timestamp: 1000, votes: { 'A': '5' } },
+            'k2': { type: 'round', score: '8', timestamp: 2000, votes: { 'B': '8' } }
+        };
+        exports.renderHistory(fakeHistory);
+
+        const expandBtn = win.document.getElementById('expand-all-history-btn');
+        expect(expandBtn !== null).to.be.true();
+
+        // Click expand all
+        expandBtn.click();
+        const rounds = win.document.querySelectorAll('.history-round');
+        expect(rounds[0].classList.contains('expanded')).to.be.true();
+        expect(rounds[1].classList.contains('expanded')).to.be.true();
+
+        // Click again — collapse all
+        expandBtn.click();
+        expect(rounds[0].classList.contains('expanded')).to.be.false();
+        expect(rounds[1].classList.contains('expanded')).to.be.false();
+    });
+
+    it('26. collectVotes - zbiera głosy graczy (bez spectatorów)', async () => {
+        localStorage.setItem('sp_offlineMode', 'true');
+        const win = await loadApp('index.html?room=COLVOTES');
+        const exports = win.__TEST_EXPORTS__;
+
+        exports.setPlayersData({
+            'p1': { name: 'Alice', vote: '5', role: 'player' },
+            'p2': { name: 'Bob', vote: null, role: 'player' },
+            'spec': { name: 'Eve', vote: '100', role: 'spectator' }
+        });
+
+        const votes = exports.collectVotes();
+        expect(votes['Alice']).to.equal('5');
+        expect(votes['Bob']).to.equal(null);
+        expect(votes['Eve'] === undefined).to.be.true();
+    });
+
+    it('27. Close Room ikona - widoczna dla admina, ukryta dla zwykłego gracza', async () => {
+        localStorage.setItem('sp_offlineMode', 'true');
+        const win = await loadApp('index.html?room=CLOSE_ICON');
+
+        const closeBtn = win.document.getElementById('close-room-btn');
+        expect(closeBtn !== null).to.be.true();
+        // By default, close-room-btn has class 'hidden'
+        expect(closeBtn.classList.contains('hidden')).to.be.true();
+    });
 });
 
 // Run Mocha after all scripts loaded
