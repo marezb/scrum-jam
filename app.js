@@ -1,7 +1,7 @@
-import { generateId, verifyPassword, POKER_CARDS, FIB_COLORS, firebaseConfig } from './config.js?v=23';
-import { elements, screens, showScreen, renderDeck, updateDeckSelection, renderPlayers } from './ui.js?v=23';
-import { calculateAverage, getClosestFibonacci, checkAutoRevealCondition } from './game-logic.js?v=23';
-import * as db from './firebase-service.js?v=23';
+import { generateId, verifyPassword, POKER_CARDS, FIB_COLORS, firebaseConfig } from './config.js?v=24';
+import { elements, screens, showScreen, renderDeck, updateDeckSelection, renderPlayers } from './ui.js?v=24';
+import { calculateAverage, getClosestFibonacci, checkAutoRevealCondition } from './game-logic.js?v=24';
+import * as db from './firebase-service.js?v=24';
 
 function spawnRestingConfetti() {
     const colors = ['#26ccff', '#a25afd', '#ff5e7e', '#88ff5a', '#fcff42', '#ffa62d', '#ff36ff'];
@@ -337,6 +337,9 @@ elements.revealBtn.addEventListener('click', () => {
             const storyId = elements.storyIdInput.value.trim() || null;
             db.addRoundHistory(currentRoomId, getClosestFibonacci(res.average), collectVotes(), storyId);
         }
+        // Clear story after saving to history
+        elements.storyIdInput.value = '';
+        if (db.setStoryId) db.setStoryId(currentRoomId, '');
         db.updateRevealedState(currentRoomId, true, currentName);
     }
 });
@@ -356,8 +359,6 @@ elements.resetBtn.addEventListener('click', () => {
             if (db.clearTimer) db.clearTimer(currentRoomId);
         }
     }
-    elements.storyIdInput.value = '';
-    if (!isOfflineMode && db.setStoryId) db.setStoryId(currentRoomId, '');
 });
 
 // Timer: only allow spinner arrows, no keyboard typing
@@ -470,6 +471,9 @@ function joinRoomOnline(roomId, roomName = null) {
                         const storyId = elements.storyIdInput.value.trim() || null;
                         db.addRoundHistory(currentRoomId, getClosestFibonacci(res.average), collectVotes(), storyId);
                     }
+                    // Clear story after saving to history
+                    elements.storyIdInput.value = '';
+                    if (db.setStoryId) db.setStoryId(currentRoomId, '');
                 }
                 db.updateRevealedState(currentRoomId, true, "System (Auto)");
             }
@@ -529,6 +533,9 @@ function joinRoomOnline(roomId, roomName = null) {
                                     const storyId = elements.storyIdInput.value.trim() || null;
                                     db.addRoundHistory(currentRoomId, getClosestFibonacci(res.average), collectVotes(), storyId);
                                 }
+                                // Clear story after saving to history
+                                elements.storyIdInput.value = '';
+                                if (db.setStoryId) db.setStoryId(currentRoomId, '');
                                 db.updateRevealedState(currentRoomId, true, "System (Time Out)");
                             }
                         }
