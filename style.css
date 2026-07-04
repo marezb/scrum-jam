@@ -401,6 +401,12 @@ input[type="text"]:focus, input[type="password"]:focus, textarea:focus {
     width: 100%;
 }
 
+#reset-controls-group {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
 .spectators-panel h4 {
     font-size: 0.85rem;
     color: var(--text-muted);

@@ -16,7 +16,8 @@ export const FIB_COLORS = {
 export const ADMIN_PASSWORD_HASH = "7183d83771679998019378c5c8b847e40f13ecd0ef2e7b3610650d27b2ff32a8";
 
 export async function verifyPassword(password) {
-    if (localStorage.getItem('sp_offlineMode') === 'true' && password === 'AskMarekForApproval') return true;
+    // In offline mode, skip password verification (local-only, no server)
+    if (localStorage.getItem('sp_offlineMode') === 'true') return true;
     const encoder = new TextEncoder();
     const data = encoder.encode(password);
     const hashBuffer = await crypto.subtle.digest('SHA-256', data);

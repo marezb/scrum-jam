@@ -1,7 +1,7 @@
-import { generateId, verifyPassword, POKER_CARDS, FIB_COLORS, firebaseConfig } from './config.js?v=18';
-import { elements, screens, showScreen, renderDeck, updateDeckSelection, renderPlayers } from './ui.js?v=18';
-import { calculateAverage, getClosestFibonacci, checkAutoRevealCondition } from './game-logic.js?v=18';
-import * as db from './firebase-service.js?v=18';
+import { generateId, verifyPassword, POKER_CARDS, FIB_COLORS, firebaseConfig } from './config.js?v=20';
+import { elements, screens, showScreen, renderDeck, updateDeckSelection, renderPlayers } from './ui.js?v=20';
+import { calculateAverage, getClosestFibonacci, checkAutoRevealCondition } from './game-logic.js?v=20';
+import * as db from './firebase-service.js?v=20';
 
 function spawnRestingConfetti() {
     const colors = ['#26ccff', '#a25afd', '#ff5e7e', '#88ff5a', '#fcff42', '#ffa62d', '#ff36ff'];
@@ -169,8 +169,30 @@ elements.joinForm.addEventListener('submit', async (e) => {
         }
     } catch (err) {
         console.error("Failed to create/join room:", err);
-        document.body.innerHTML = `<h1 style="color:red;z-index:9999;position:absolute;">ERROR: ${err.message} ${err.stack}</h1>`;
-        alert("Error connecting to the server. Please try again or check your connection.");
+        // Show error overlay without destroying the DOM
+        let overlay = document.getElementById('error-overlay');
+        if (!overlay) {
+            overlay = document.createElement('div');
+            overlay.id = 'error-overlay';
+            overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
+            document.body.appendChild(overlay);
+        }
+        const msg = document.createElement('div');
+        msg.style.cssText = 'background:#1e293b;border:1px solid #ef4444;border-radius:16px;padding:30px;max-width:500px;text-align:center;';
+        const title = document.createElement('h2');
+        title.style.cssText = 'color:#ef4444;margin-bottom:15px;';
+        title.textContent = 'Connection Error';
+        const detail = document.createElement('p');
+        detail.style.cssText = 'color:#94a3b8;margin-bottom:20px;';
+        detail.textContent = err.message || 'Unknown error';
+        const btn = document.createElement('button');
+        btn.textContent = 'Try Again';
+        btn.style.cssText = 'padding:10px 24px;border-radius:8px;border:none;background:#3b82f6;color:white;cursor:pointer;font-size:1rem;';
+        btn.addEventListener('click', () => { overlay.remove(); });
+        msg.appendChild(title);
+        msg.appendChild(detail);
+        msg.appendChild(btn);
+        overlay.appendChild(msg);
     }
 });
 
@@ -198,17 +220,44 @@ function renderActiveRooms(activeRooms) {
         const lastActiveText = room.lastActive ? formatTimeAgo(room.lastActive) : 'Unknown';
         const displayName = room.roomName ? room.roomName : roomId;
         
+        // Build DOM safely to prevent XSS from user-controlled data
         const li = document.createElement('li');
-        li.innerHTML = `
-            <div style="display: flex; flex-direction: column; gap: 4px;">
-                <span style="font-weight: 600;">${displayName}</span>
-                <span style="font-size: 0.75rem; color: var(--text-muted);">ID: ${roomId} | Created by: ${room.createdBy} | Last active: ${lastActiveText}</span>
-            </div>
-            <div class="room-actions">
-                <button class="btn icon-btn copy-btn" data-room="${roomId}" title="Copy Link">Copy Link</button>
-                <button class="btn icon-btn close-btn" data-room="${roomId}" title="Close Room" style="color: #ef4444;">Close</button>
-            </div>
-        `;
+        
+        const infoDiv = document.createElement('div');
+        infoDiv.style.cssText = 'display: flex; flex-direction: column; gap: 4px;';
+        
+        const nameSpan = document.createElement('span');
+        nameSpan.style.fontWeight = '600';
+        nameSpan.textContent = displayName;
+        
+        const detailSpan = document.createElement('span');
+        detailSpan.style.cssText = 'font-size: 0.75rem; color: var(--text-muted);';
+        detailSpan.textContent = `ID: ${roomId} | Created by: ${room.createdBy} | Last active: ${lastActiveText}`;
+        
+        infoDiv.appendChild(nameSpan);
+        infoDiv.appendChild(detailSpan);
+        
+        const actionsDiv = document.createElement('div');
+        actionsDiv.className = 'room-actions';
+        
+        const copyBtn = document.createElement('button');
+        copyBtn.className = 'btn icon-btn copy-btn';
+        copyBtn.dataset.room = roomId;
+        copyBtn.title = 'Copy Link';
+        copyBtn.textContent = 'Copy Link';
+        
+        const closeBtn = document.createElement('button');
+        closeBtn.className = 'btn icon-btn close-btn';
+        closeBtn.dataset.room = roomId;
+        closeBtn.title = 'Close Room';
+        closeBtn.style.color = '#ef4444';
+        closeBtn.textContent = 'Close';
+        
+        actionsDiv.appendChild(copyBtn);
+        actionsDiv.appendChild(closeBtn);
+        
+        li.appendChild(infoDiv);
+        li.appendChild(actionsDiv);
         elements.activeRoomsList.appendChild(li);
     });
 
@@ -236,8 +285,8 @@ function renderActiveRooms(activeRooms) {
 
 elements.editRoomNameBtn.addEventListener('click', () => {
     if (!currentRoomId || isOfflineMode) return;
-    const currentName = elements.displayRoomId.innerText === currentRoomId ? "" : elements.displayRoomId.innerText;
-    const newName = prompt("Enter new room name:", currentName);
+    const currentDisplayName = elements.displayRoomId.innerText === currentRoomId ? "" : elements.displayRoomId.innerText;
+    const newName = prompt("Enter new room name:", currentDisplayName);
     
     if (newName !== null) {
         const trimmedName = newName.trim();
@@ -382,7 +431,21 @@ function joinRoomOnline(roomId, roomName = null) {
             const animate = isRevealed && !wasRevealed;
             const resetAnim = !isRevealed && wasRevealed;
             updateUIState(state.revealedBy, state.resetBy);
-            renderPlayers(playersData, isRevealed, animate, resetAnim);
+            
+            if (animate) {
+                renderPlayers(playersData, true, true, false, false, false);
+                const playerCount = Object.keys(playersData).filter(id => playersData[id] && playersData[id].role !== 'spectator').length;
+                const revealDuration = playerCount * 150 + 400;
+                
+                if (window.sortTimeout) clearTimeout(window.sortTimeout);
+                window.sortTimeout = setTimeout(() => {
+                    if (isRevealed) {
+                        renderPlayers(playersData, true, false, false, true, true);
+                    }
+                }, revealDuration);
+            } else {
+                renderPlayers(playersData, isRevealed, false, resetAnim);
+            }
 
             if (state.autoTimer !== undefined && document.activeElement !== elements.autoTimerInput) {
                 elements.autoTimerInput.value = state.autoTimer === 0 ? '' : state.autoTimer;
@@ -483,7 +546,21 @@ function updateGameStateOffline(animate = false, revealedBy = null, resetBy = nu
             }
         });
     }
-    renderPlayers(playersData, isRevealed, animate, resetAnim);
+    if (animate) {
+        renderPlayers(playersData, true, true, false, false, false);
+        const playerCount = Object.keys(playersData).filter(id => playersData[id] && playersData[id].role !== 'spectator').length;
+        const revealDuration = playerCount * 150 + 400;
+        
+        if (window.sortTimeout) clearTimeout(window.sortTimeout);
+        window.sortTimeout = setTimeout(() => {
+            if (isRevealed) {
+                renderPlayers(playersData, true, false, false, true, true);
+            }
+        }, revealDuration);
+    } else {
+        renderPlayers(playersData, isRevealed, false, resetAnim);
+    }
+
     updateDeckSelection(playersData[currentPlayerId]?.vote, isRevealed);
 }
 
@@ -541,7 +618,7 @@ function renderHistory(historyObj) {
         elements.historyPanel.classList.remove('hidden');
         let roundCounter = 1;
         historyEntries.forEach((entry) => {
-            if (entry.type === 'new_round') return; // ignore legacy new_round entries
+            if (entry.type !== 'round') return; // only render actual round entries
             const li = document.createElement('li');
             let scoreText = entry.score;
             let bgStyle = '';
@@ -631,7 +708,9 @@ init();
 window.__TEST_EXPORTS__ = {
     calculateAverage,
     getClosestFibonacci,
+    checkAutoRevealCondition,
     generateId,
+    formatTimeAgo,
     joinRoomOffline,
     handleCardSelect,
     get playersData() { return playersData; },

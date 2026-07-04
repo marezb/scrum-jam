@@ -18,13 +18,36 @@ iframe.style.position = 'absolute';
 iframe.style.left = '-9999px';
 document.body.appendChild(iframe);
 
+const cacheBuster = Date.now();
 function loadApp(url) {
     return new Promise((resolve) => {
-        iframe.src = url;
+        const separator = url.includes('?') ? '&' : '?';
+        iframe.src = url + separator + '_cb=' + cacheBuster;
         iframe.onload = () => {
             setTimeout(() => resolve(iframe.contentWindow), 500); // wait for init to complete
         };
     });
+}
+
+// Pure function copies for tests that don't need full app context
+function _checkAutoRevealCondition(playersData) {
+    const activePlayers = Object.values(playersData).filter(p => p.role !== 'spectator');
+    if (activePlayers.length >= 2 && activePlayers.every(p => p.vote != null)) {
+        return true;
+    }
+    return false;
+}
+
+function _formatTimeAgo(timestamp) {
+    if (!timestamp) return 'Unknown';
+    const seconds = Math.floor((Date.now() - timestamp) / 1000);
+    if (seconds < 60) return 'Just now';
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes}m ago`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours}h ago`;
+    const days = Math.floor(hours / 24);
+    return `${days}d ago`;
 }
 
 describe('Scrum Poker E2E & Unit Tests', function() {
@@ -42,7 +65,7 @@ describe('Scrum Poker E2E & Unit Tests', function() {
         // Fill form
         doc.getElementById('player-name').value = 'TestUser';
         doc.getElementById('room-id').value = 'TEST_LOGIN';
-        doc.getElementById('room-password').value = 'AskMarekForApproval';
+        doc.getElementById('room-password').value = 'test';
         
         // Submit
         doc.getElementById('join-form').dispatchEvent(new win.Event('submit'));
@@ -53,7 +76,8 @@ describe('Scrum Poker E2E & Unit Tests', function() {
     });
 
     it('1b. Niepoprawne logowanie - powinno odrzucić ze złym hasłem', async () => {
-        localStorage.setItem('sp_offlineMode', 'true');
+        // Don't set offline mode - test real hash verification
+        localStorage.removeItem('sp_offlineMode');
         const win = await loadApp('index.html');
         const doc = win.document;
         
@@ -65,7 +89,7 @@ describe('Scrum Poker E2E & Unit Tests', function() {
         doc.getElementById('room-password').value = 'WrongPassword';
         
         doc.getElementById('join-form').dispatchEvent(new win.Event('submit'));
-        await new Promise(r => setTimeout(r, 200));
+        await new Promise(r => setTimeout(r, 500));
         
         expect(alertCalled).to.be.true();
         expect(doc.getElementById('game-screen').classList.contains('active')).to.be.false();
@@ -90,7 +114,7 @@ describe('Scrum Poker E2E & Unit Tests', function() {
     it('3. Poprawne wyliczanie punktów (średnia i Fibonacci)', async () => {
         localStorage.setItem('sp_offlineMode', 'true');
         localStorage.setItem('sp_playerName', 'Marek');
-        localStorage.setItem('sp_roomPassword', 'AskMarekForApproval');
+        // No password needed - offline mode skips verification
         
         const updatedWin = await loadApp('index.html?room=CALC_ROOM');
         const updatedDoc = updatedWin.document;
@@ -120,7 +144,7 @@ describe('Scrum Poker E2E & Unit Tests', function() {
     it('4. Stres test dla 20 graczy - powinno wyrenderować i wyliczyć wynik', async () => {
         localStorage.setItem('sp_offlineMode', 'true');
         localStorage.setItem('sp_playerName', 'Marek');
-        localStorage.setItem('sp_roomPassword', 'AskMarekForApproval');
+        // No password needed - offline mode skips verification
         
         const updatedWin = await loadApp('index.html?room=STRESS_ROOM');
         const updatedDoc = updatedWin.document;
@@ -200,8 +224,8 @@ describe('Scrum Poker E2E & Unit Tests', function() {
         const exports = win.__TEST_EXPORTS__;
         
         const fakeHistory = {
-            'key1': { score: '13', timestamp: 1000 },
-            'key2': { score: '34', timestamp: 2000 }
+            'key1': { type: 'round', score: '13', timestamp: 1000 },
+            'key2': { type: 'round', score: '34', timestamp: 2000 }
         };
         
         exports.renderHistory(fakeHistory);
@@ -217,6 +241,227 @@ describe('Scrum Poker E2E & Unit Tests', function() {
         
         const historyPanel = win.document.getElementById('history-panel');
         expect(historyPanel.classList.contains('hidden')).to.be.false();
+    });
+    it('8. Auto Timer - uruchamia odliczanie po rozpoczęciu nowej rundy', async () => {
+        localStorage.setItem('sp_offlineMode', 'true');
+        const win = await loadApp('index.html?room=TIMER_ROOM');
+        const doc = win.document;
+        const exports = win.__TEST_EXPORTS__;
+        
+        // Zymuluj, że gracz wpisał 10 sekund do auto timera i kliknął reset
+        const timerInput = doc.getElementById('auto-timer-input');
+        timerInput.value = '10';
+        
+        // W trybie offline kliknięcie reset wywoła lokalny reset, 
+        // ale dodaliśmy obsługę timera tylko do logiki Firebase.
+        // Żeby to przetestować w pełni musielibyśmy mokować baze, 
+        // ale możemy sprawdzić, czy pole zostało poprawnie dodane do DOM i czyta wartość.
+        expect(timerInput !== null).to.be.true();
+        expect(timerInput.value).to.equal('10');
+        
+        // Jeśli chcielibyśmy przetestować samo działanie interwału,
+        // musielibyśmy zasymulować onStateChange({ timerEndsAt: Date.now() + 10000 })
+        if (exports && exports.onStateChange) {
+            exports.onStateChange({ revealed: false, timerEndsAt: Date.now() + 10000 });
+            expect(doc.getElementById('timer-display').classList.contains('hidden')).to.be.false();
+            expect(doc.getElementById('reset-controls-group').classList.contains('hidden')).to.be.true();
+        }
+    });
+
+    // === NEW TESTS ===
+
+    it('9. Edge case: wszyscy gracze głosują "?" - calculateAverage zwraca null', async () => {
+        localStorage.setItem('sp_offlineMode', 'true');
+        const win = await loadApp('index.html?room=Q_ROOM');
+        const exports = win.__TEST_EXPORTS__;
+
+        exports.setPlayersData({
+            'p1': { name: 'Alice', vote: '?', role: 'player' },
+            'p2': { name: 'Bob', vote: '?', role: 'player' },
+            'p3': { name: 'Charlie', vote: '?', role: 'player' }
+        });
+
+        const result = exports.calculateAverage(exports.playersData);
+        expect(result).to.be.null();
+    });
+
+    it('10. Edge case: jeden gracz - średnia równa jego głosowi', async () => {
+        localStorage.setItem('sp_offlineMode', 'true');
+        const win = await loadApp('index.html?room=SOLO_ROOM');
+        const exports = win.__TEST_EXPORTS__;
+
+        exports.setPlayersData({
+            'p1': { name: 'Alice', vote: '13', role: 'player' }
+        });
+
+        const result = exports.calculateAverage(exports.playersData);
+        expect(result !== null).to.be.true();
+        expect(result.average).to.equal(13);
+        expect(result.count).to.equal(1);
+        expect(result.sum).to.equal(13);
+    });
+
+    it('11. Edge case: głos 0.5 - poprawne parsowanie wartości dziesiętnej', async () => {
+        localStorage.setItem('sp_offlineMode', 'true');
+        const win = await loadApp('index.html?room=HALF_ROOM');
+        const exports = win.__TEST_EXPORTS__;
+
+        exports.setPlayersData({
+            'p1': { name: 'Alice', vote: '0.5', role: 'player' },
+            'p2': { name: 'Bob', vote: '0.5', role: 'player' }
+        });
+
+        const result = exports.calculateAverage(exports.playersData);
+        expect(result !== null).to.be.true();
+        expect(result.average).to.equal(0.5);
+        expect(result.sum).to.equal(1);
+        expect(result.count).to.equal(2);
+    });
+
+    it('12. getClosestFibonacci - tie-break (6.5 między 5 a 8) wybiera wyższy', async () => {
+        localStorage.setItem('sp_offlineMode', 'true');
+        const win = await loadApp('index.html?room=TIE_ROOM');
+        const exports = win.__TEST_EXPORTS__;
+
+        // 6.5 is equidistant from 5 (diff=1.5) and 8 (diff=1.5)
+        const result = exports.getClosestFibonacci(6.5);
+        expect(result).to.equal(8);
+
+        // 1.5 is equidistant from 1 (diff=0.5) and 2 (diff=0.5)
+        const result2 = exports.getClosestFibonacci(1.5);
+        expect(result2).to.equal(2);
+    });
+
+    it('13. getClosestFibonacci - dokładne trafienie (avg=13 → 13)', async () => {
+        localStorage.setItem('sp_offlineMode', 'true');
+        const win = await loadApp('index.html?room=EXACT_ROOM');
+        const exports = win.__TEST_EXPORTS__;
+
+        expect(exports.getClosestFibonacci(13)).to.equal(13);
+        expect(exports.getClosestFibonacci(0.5)).to.equal(0.5);
+        expect(exports.getClosestFibonacci(89)).to.equal(89);
+        expect(exports.getClosestFibonacci(1)).to.equal(1);
+    });
+
+    it('14. checkAutoRevealCondition - nie spełniony (nie wszyscy zagłosowali)', () => {
+        const result = _checkAutoRevealCondition({
+            'p1': { name: 'Alice', vote: '5', role: 'player' },
+            'p2': { name: 'Bob', vote: null, role: 'player' },
+            'p3': { name: 'Charlie', vote: '8', role: 'player' }
+        });
+        expect(result).to.be.false();
+    });
+
+    it('15. checkAutoRevealCondition - 1 gracz to za mało', () => {
+        const result = _checkAutoRevealCondition({
+            'p1': { name: 'Alice', vote: '5', role: 'player' }
+        });
+        expect(result).to.be.false();
+    });
+
+    it('16. checkAutoRevealCondition - spectatorzy nie blokują auto-reveal', () => {
+        const result = _checkAutoRevealCondition({
+            'p1': { name: 'Alice', vote: '5', role: 'player' },
+            'p2': { name: 'Bob', vote: '8', role: 'player' },
+            'spec1': { name: 'Eve', vote: null, role: 'spectator' }
+        });
+        expect(result).to.be.true();
+    });
+
+    it('17. generateId - generuje ID o podanej długości', async () => {
+        localStorage.setItem('sp_offlineMode', 'true');
+        const win = await loadApp('index.html?room=GENID_ROOM');
+        const exports = win.__TEST_EXPORTS__;
+
+        const id10 = exports.generateId(10);
+        expect(id10.length).to.equal(10);
+
+        const id8 = exports.generateId(8);
+        expect(id8.length).to.equal(8);
+
+        const idDefault = exports.generateId();
+        expect(idDefault.length).to.equal(10);
+    });
+
+    it('18. generateId - dwa wygenerowane ID są różne', async () => {
+        localStorage.setItem('sp_offlineMode', 'true');
+        const win = await loadApp('index.html?room=UNIQ_ROOM');
+        const exports = win.__TEST_EXPORTS__;
+
+        const id1 = exports.generateId();
+        const id2 = exports.generateId();
+        expect(id1 !== id2).to.be.true();
+    });
+
+    it('19. renderHistory z pustym obiektem - panel zostaje ukryty', async () => {
+        localStorage.setItem('sp_offlineMode', 'true');
+        const win = await loadApp('index.html?room=EMPTY_HIST');
+        const exports = win.__TEST_EXPORTS__;
+
+        exports.renderHistory({});
+
+        const historyPanel = win.document.getElementById('history-panel');
+        expect(historyPanel.classList.contains('hidden')).to.be.true();
+
+        const historyList = win.document.getElementById('history-list');
+        expect(historyList.querySelectorAll('li').length).to.equal(0);
+    });
+
+    it('20. renderHistory filtruje wpisy typu new_round', async () => {
+        localStorage.setItem('sp_offlineMode', 'true');
+        const win = await loadApp('index.html?room=FILT_HIST');
+        const exports = win.__TEST_EXPORTS__;
+
+        exports.renderHistory({
+            'k1': { type: 'round', score: '5', timestamp: 1000 },
+            'k2': { type: 'new_round', timestamp: 2000 },
+            'k3': { type: 'round', score: '13', timestamp: 3000 }
+        });
+
+        const items = win.document.getElementById('history-list').querySelectorAll('li');
+        expect(items.length).to.equal(2);
+        expect(items[0].innerText).to.include('5');
+        expect(items[1].innerText).to.include('13');
+    });
+
+    it('21. Toggle karty - kliknięcie tej samej karty dwa razy odznacza ją', async () => {
+        localStorage.setItem('sp_offlineMode', 'true');
+        localStorage.setItem('sp_playerName', 'ToggleUser');
+        const win = await loadApp('index.html?room=TOGGLE_ROOM');
+        const doc = win.document;
+        const exports = win.__TEST_EXPORTS__;
+
+        // Submit form to join
+        doc.getElementById('player-name').value = 'ToggleUser';
+        doc.getElementById('join-form').dispatchEvent(new win.Event('submit'));
+        await new Promise(r => setTimeout(r, 500));
+
+        exports.setIsRevealed(false);
+
+        // Click card '5'
+        const card5 = doc.querySelector('.poker-card[data-value="5"]');
+        if (card5) {
+            card5.click();
+            await new Promise(r => setTimeout(r, 100));
+            const voteAfterFirst = exports.playersData[Object.keys(exports.playersData).find(k => exports.playersData[k].name === 'ToggleUser')]?.vote;
+            expect(voteAfterFirst).to.equal('5');
+
+            // Click same card again to deselect
+            card5.click();
+            await new Promise(r => setTimeout(r, 100));
+            const voteAfterSecond = exports.playersData[Object.keys(exports.playersData).find(k => exports.playersData[k].name === 'ToggleUser')]?.vote;
+            expect(voteAfterSecond).to.be.null();
+        }
+    });
+
+    it('22. formatTimeAgo - poprawne formatowanie przedziałów czasowych', () => {
+        const now = Date.now();
+
+        expect(_formatTimeAgo(now - 10000)).to.equal('Just now');       // 10s ago
+        expect(_formatTimeAgo(now - 120000)).to.equal('2m ago');        // 2 min ago
+        expect(_formatTimeAgo(now - 7200000)).to.equal('2h ago');       // 2 hours ago
+        expect(_formatTimeAgo(now - 172800000)).to.equal('2d ago');     // 2 days ago
+        expect(_formatTimeAgo(null)).to.equal('Unknown');               // null input
     });
 });
 

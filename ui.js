@@ -85,17 +85,28 @@ export function updateDeckSelection(myVote, isRevealed) {
     });
 }
 
-export function renderPlayers(playersData, isRevealed, animate = false, resetAnim = false) {
+export function renderPlayers(playersData, isRevealed, animate = false, resetAnim = false, doSort = null, useFLIP = false) {
+    if (doSort === null) doSort = isRevealed;
+
+    const oldPositions = {};
+    if (useFLIP) {
+        document.querySelectorAll('.player').forEach(el => {
+            if (el.dataset.id) {
+                oldPositions[el.dataset.id] = el.getBoundingClientRect();
+            }
+        });
+    }
+
     elements.playersContainer.innerHTML = '';
     elements.spectatorsList.innerHTML = '';
 
-    const allPlayers = Object.values(playersData).sort((a, b) => a.joinedAt - b.joinedAt);
+    const allPlayers = Object.entries(playersData).map(([id, data]) => ({ id, ...data })).sort((a, b) => a.joinedAt - b.joinedAt);
     if (allPlayers.length === 0) return;
 
     let activePlayers = allPlayers.filter(p => p.role !== 'spectator');
     const spectators = allPlayers.filter(p => p.role === 'spectator');
 
-    if (isRevealed) {
+    if (doSort) {
         activePlayers.sort((a, b) => {
             const valA = a.vote ? POKER_CARDS.indexOf(a.vote) : 999;
             const valB = b.vote ? POKER_CARDS.indexOf(b.vote) : 999;
@@ -118,6 +129,7 @@ export function renderPlayers(playersData, isRevealed, animate = false, resetAni
     activePlayers.forEach((player, index) => {
         const el = document.createElement('div');
         el.className = 'player';
+        el.dataset.id = player.id;
         if (resetAnim) {
             el.style.animation = `shuffleDeal 2s cubic-bezier(0.16, 1, 0.3, 1) ${index * 400}ms backwards`;
         }
@@ -174,4 +186,29 @@ export function renderPlayers(playersData, isRevealed, animate = false, resetAni
         el.appendChild(name);
         elements.playersContainer.appendChild(el);
     });
+
+    if (useFLIP) {
+        const newEls = document.querySelectorAll('.player');
+        newEls.forEach(el => {
+            const id = el.dataset.id;
+            const oldRect = oldPositions[id];
+            if (oldRect) {
+                const newRect = el.getBoundingClientRect();
+                const deltaX = oldRect.left - newRect.left;
+                const deltaY = oldRect.top - newRect.top;
+                
+                if (deltaX !== 0 || deltaY !== 0) {
+                    el.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
+                    el.style.transition = 'transform 0s';
+                    
+                    requestAnimationFrame(() => {
+                        requestAnimationFrame(() => {
+                            el.style.transform = '';
+                            el.style.transition = 'transform 1.2s cubic-bezier(0.25, 1, 0.5, 1)';
+                        });
+                    });
+                }
+            }
+        });
+    }
 }

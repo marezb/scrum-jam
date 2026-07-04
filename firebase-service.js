@@ -58,13 +58,14 @@ export function setAutoTimer(roomId, durationSec) {
 }
 
 export function closeRoom(roomId) {
-    alert("System: Uruchamiam nową funkcję kasowania (v5) dla pokoju " + roomId);
     console.warn("Completely deleting room from database:", roomId);
-    // Explicitly remove children in case Firebase security rules prevent deleting the parent node directly
-    remove(ref(db, `rooms/${roomId}/state`));
-    remove(ref(db, `rooms/${roomId}/players`));
-    remove(ref(db, `rooms/${roomId}/history`));
-    return remove(ref(db, `rooms/${roomId}/metadata`));
+    // Remove all children and then the parent node itself
+    return Promise.all([
+        remove(ref(db, `rooms/${roomId}/state`)),
+        remove(ref(db, `rooms/${roomId}/players`)),
+        remove(ref(db, `rooms/${roomId}/history`)),
+        remove(ref(db, `rooms/${roomId}/metadata`))
+    ]).then(() => remove(ref(db, `rooms/${roomId}`)));
 }
 
 export function joinRoom(roomId, playerId, playerData, callbacks) {
